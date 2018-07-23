@@ -9,5 +9,8 @@ module.exports = {
         devtool: 'inline-source-map',
       },
     },
+    babel: {
+      plugins: ['transform-object-rest-spread'],
+    },
   },
 };
