@@ -5,7 +5,7 @@ import connect from 'ember-simple-redux/connect';
 const TodoList = Component.extend({
   layout,
 
-  tagName: 'ul',
+  classNames: ['todo-list'],
 
   newTodoTitle: '',
 
@@ -15,6 +15,7 @@ const TodoList = Component.extend({
         type: 'TODO_ADD',
         payload: {
           title: this.get('newTodoTitle'),
+          listId: this.get('id'),
         },
       });
       this.set('newTodoTitle', '');
@@ -22,9 +23,13 @@ const TodoList = Component.extend({
   },
 });
 
-const mapStateToProps = state => {
+const mapStateToProps = (state, ownProps) => {
+  const { id, showCompleted } = ownProps;
   return {
-    todos: state.todos,
+    todos: state.todos.filter(todo => {
+      const isInList = todo.listId === id;
+      return showCompleted ? isInList : isInList && !todo.isCompleted;
+    }),
   };
 };
 

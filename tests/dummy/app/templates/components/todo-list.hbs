@@ -1,8 +1,14 @@
-{{#each todos as |todo|}}
-  {{todo-item todo=todo}}
-{{/each}}
-
-<form>
+<form class='todo-list__new-item-form'>
   {{input value=newTodoTitle}}
   <button type='submit' {{action 'addNewTodo'}}>Add</button>
 </form>
+
+{{#if todos.length}}
+  <ul class='todo-list__listing'>
+    {{#each todos as |todo|}}
+      {{todo-item todo=todo}}
+    {{/each}}
+  </ul>
+{{else}}
+  <div>All cleared!</div>
+{{/if}}

@@ -1,0 +1,31 @@
+.list-board {
+  display: flex;
+}
+
+.list-board__list-panel {
+  border: 1px solid #bfbfbf;
+}
+
+.list-board__list-panel:not(:first-child) {
+  border-left: 0px;
+}
+
+.list-board__list-panel-header {
+  padding: 10px;
+  border-bottom: 1px solid #bfbfbf;
+}
+
+.todo-list {
+  padding: 10px;
+}
+
+.todo-list__new-item-form {
+  margin-bottom: 10px;
+}
+
+.todo-list__listing {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  list-style: none;
+}

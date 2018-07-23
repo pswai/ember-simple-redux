@@ -1,0 +1,16 @@
+{{#each listDisplayConfigs as |config|}}
+  <div class="list-board__list-panel">
+    <div class="list-board__list-panel-header">
+      <label>
+        {{input type='checkbox' checked=config.showCompleted}}
+        Show Completed
+      </label>
+    </div>
+    <div>
+      {{todo-list
+        id=config.id
+        showCompleted=config.showCompleted
+      }}
+    </div>
+  </div>
+{{/each}}
