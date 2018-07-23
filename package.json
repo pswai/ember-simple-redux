@@ -32,7 +32,9 @@
     ]
   },
   "dependencies": {
-    "ember-cli-babel": "^6.6.0"
+    "ember-auto-import": "^1.2.4",
+    "ember-cli-babel": "^6.6.0",
+    "redux": "^4.0.0"
   },
   "devDependencies": {
     "broccoli-asset-rev": "^2.7.0",
