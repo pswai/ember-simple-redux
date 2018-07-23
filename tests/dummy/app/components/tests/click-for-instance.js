@@ -9,6 +9,6 @@ export default Component.extend({
   onClick() {},
 
   click() {
-    this.get('onClick')(this.simpleReduxStore);
+    this.get('onClick')(this);
   },
 });

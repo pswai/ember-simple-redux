@@ -7,13 +7,15 @@ const connect = (
   const update = componentInstance => {
     const { simpleReduxStore, attrs } = componentInstance;
     const state = simpleReduxStore.getState();
-    let ownProps;
+    let stateProps;
 
     // Check arity, if arity is 1 then no `ownProps` is needed
     if (mapStateToProps.length !== 1) {
-      ownProps = componentInstance.getProperties(Object.keys(attrs));
+      const ownProps = componentInstance.getProperties(Object.keys(attrs));
+      stateProps = mapStateToProps(state, ownProps);
+    } else {
+      stateProps = mapStateToProps(state);
     }
-    const stateProps = mapStateToProps(state, ownProps);
     componentInstance.setProperties(stateProps);
   };
 
