@@ -229,7 +229,64 @@ module('Integration | connect', function(hooks) {
 
     const instance = spy.getCall(0).args[0];
     assert.equal(typeOf(instance.get('onClick')), 'function');
+    assert.notOk(
+      instance.hasOwnProperty('foo'),
+      'Property `foo` should not exist'
+    );
+    assert.notOk(
+      instance.hasOwnProperty('bar'),
+      'Property `bar` should not exist'
+    );
     assert.equal(instance.get('foo'), undefined, '`foo` should be undefined');
     assert.equal(instance.get('bar'), undefined, '`bar` should be undefined');
+  });
+
+  test('mergeProps: prevents leaking props even after updates', async function(assert) {
+    const DEFAULT_STATE = { passingProp: 'foo' };
+    const reducer = (state = DEFAULT_STATE, action) => {
+      if (action.type === 'CHANGE_TO_BAR') {
+        return {
+          passingProp: 'bar',
+        };
+      }
+      return state;
+    };
+    const store = createStore(reducer);
+    this.owner.register('simple-redux:store', store);
+
+    const mapStateToProps = state => state;
+    const mergeProps = (stateProps, dispatchProps, ownProps) => ({
+      onClick: ownProps.onClick,
+      [stateProps.passingProp]: ownProps[stateProps.passingProp],
+    });
+    const connectedComponent = connect(
+      mapStateToProps,
+      null,
+      mergeProps
+    )(ClickForInstance);
+    this.owner.register('component:test-target', connectedComponent);
+
+    const spy = sinon.spy();
+    this.set('spy', spy);
+    await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+    await click('.test-target');
+
+    const instance = spy.getCall(0).args[0];
+    assert.equal(typeOf(instance.get('onClick')), 'function');
+    assert.ok(instance.hasOwnProperty('foo'), 'Property `foo` should exist');
+    assert.notOk(
+      instance.hasOwnProperty('bar'),
+      'Property `bar` should not exist'
+    );
+
+    store.dispatch({
+      type: 'CHANGE_TO_BAR',
+    });
+    assert.equal(typeOf(instance.get('onClick')), 'function');
+    assert.notOk(
+      instance.hasOwnProperty('foo'),
+      'Property `foo` should not exist'
+    );
+    assert.ok(instance.hasOwnProperty('bar'), 'Property `bar` should exist');
   });
 });

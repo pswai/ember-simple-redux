@@ -7,13 +7,13 @@ const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
 const connect = (
   mapStateToProps,
   mapDispatchToProps,
-  mergeProps
+  mergeProps = defaultMergeProps
   // options
 ) => EmberComponent => {
   const update = componentInstance => {
     const { simpleReduxStore, attrs } = componentInstance;
     const state = simpleReduxStore.getState();
-    let stateProps, dispatchProps, finalProps;
+    let stateProps, dispatchProps;
     let ownProps = componentInstance.getProperties(Object.keys(attrs));
 
     // Check arity, if arity is 1 then no `ownProps` is needed
@@ -27,24 +27,16 @@ const connect = (
 
     dispatchProps = mapDispatchToProps;
 
-    // Do mergeProps
-    if (mergeProps) {
-      // Create an object with all existing attrs set to undefined.
-      // This prevents attrs to be leaked to component if `mergeProps` does not
-      // define it.
-      const resetProps = Object.keys(attrs).reduce((result, key) => {
-        result[key] = undefined;
-        return result;
-      }, {});
-      finalProps = {
-        ...resetProps,
-        ...mergeProps(stateProps, dispatchProps, ownProps),
-      };
-    } else {
-      finalProps = defaultMergeProps(stateProps, dispatchProps, ownProps);
-    }
-
+    // Do mergeProps and set it to component instance
+    const finalProps = mergeProps(stateProps, dispatchProps, ownProps);
     componentInstance.setProperties(finalProps);
+
+    // This prevents attrs to be leaked to component
+    Object.keys(attrs).forEach(key => {
+      if (!finalProps.hasOwnProperty(key)) {
+        delete componentInstance[key];
+      }
+    });
   };
 
   return EmberComponent.extend({
