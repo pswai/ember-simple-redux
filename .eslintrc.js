@@ -10,6 +10,7 @@ module.exports = {
     es6: true,
     browser: true,
     node: true,
+    mocha: true,
   },
   rules: {
     'prettier/prettier': 'warn',

@@ -1,36 +1,31 @@
-import Application from '@ember/application';
-
-import { initialize } from 'dummy/initializers/simple-redux-store';
-import { module, test } from 'qunit';
-import { setupTest } from 'ember-qunit';
+import { expect } from 'chai';
+import { describe, it, beforeEach, afterEach } from 'mocha';
 import { run } from '@ember/runloop';
+import Application from '@ember/application';
+import { initialize } from 'dummy/initializers/simple-redux-store';
+import destroyApp from '../../helpers/destroy-app';
 import isReduxStore from '../../utils/is-redux-store';
 
-module('Unit | Initializer | simple-redux-store', function(hooks) {
-  setupTest(hooks);
+describe('Unit | Initializer | simple-redux-store', function() {
+  let application;
 
-  hooks.beforeEach(function() {
-    this.TestApplication = Application.extend();
-    this.TestApplication.initializer({
-      name: 'initializer under test',
-      initialize,
+  beforeEach(function() {
+    run(function() {
+      application = Application.create();
+      application.deferReadiness();
     });
-
-    this.application = this.TestApplication.create({ autoboot: false });
   });
 
-  hooks.afterEach(function() {
-    run(this.application, 'destroy');
+  afterEach(function() {
+    destroyApp(application);
   });
 
-  test('it registers `simple-redux:store`', async function(assert) {
-    await run(() => this.application.boot());
-    const registeredStuff = this.application.resolveRegistration(
+  it('registers `simple-redux:store`', function() {
+    initialize(application);
+    const registeredStuff = application.resolveRegistration(
       'simple-redux:store'
     );
-    assert.ok(
-      isReduxStore(registeredStuff),
-      'simple-redux:store is Redux store'
-    );
+    expect(isReduxStore(registeredStuff), 'simple-redux:store is Redux store')
+      .to.be.true;
   });
 });

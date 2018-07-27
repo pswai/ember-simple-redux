@@ -1,6 +1,7 @@
 import Ember from 'ember';
-import { module, test } from 'qunit';
-import { setupRenderingTest } from 'ember-qunit';
+import { expect } from 'chai';
+import { describe, it } from 'mocha';
+import { setupRenderingTest } from 'ember-mocha';
 import { click, render } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
 import Component from '@ember/component';
@@ -10,22 +11,21 @@ import connect from 'ember-simple-redux/connect';
 import ClickForInstance from 'dummy/components/tests/click-for-instance';
 import sinon from 'sinon';
 
-module('Integration | connect', function(hooks) {
-  setupRenderingTest(hooks);
+describe('Integration | connect', function() {
+  setupRenderingTest();
 
-  test('it returns another component', function(assert) {
+  it('returns another component', function() {
     const component = Component.extend();
     const connectedComponent = connect()(component);
 
-    assert.equal(typeOf(connectedComponent), 'class');
-    assert.notEqual(
+    expect(typeOf(connectedComponent)).to.equal('class');
+    expect(
       component,
-      connectedComponent,
       'Connected component should be a different class'
-    );
+    ).to.not.equal(connectedComponent);
   });
 
-  test('it passes original props to connected component', async function(assert) {
+  it('passes original props to connected component', async function() {
     const connectedComponent = connect()(ClickForInstance);
     this.owner.register('component:test-target', connectedComponent);
 
@@ -35,11 +35,11 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(instance.get('foo'), 1);
-    assert.equal(instance.get('bar'), 'test');
+    expect(instance.get('foo')).to.equal(1);
+    expect(instance.get('bar')).to.equal('test');
   });
 
-  test('mapStateToProps (function): called with Redux state and `ownProps` when arity 0', async function(assert) {
+  it('mapStateToProps (function): called with Redux state and `ownProps` when arity 0', async function() {
     const state = {};
     const store = createStore(() => state);
     this.owner.register('simple-redux:store', store);
@@ -53,11 +53,11 @@ module('Integration | connect', function(hooks) {
     await render(hbs`{{test-target foo=1}}`);
 
     const { args } = spy.getCall(0);
-    assert.equal(args[0], state, '`state` should be as is');
-    assert.deepEqual(args[1], { foo: 1 }, '`ownProps` should be passed');
+    expect(args[0], '`state` should be as is').to.equal(state);
+    expect(args[1], '`ownProps` should be passed').to.deep.equal({ foo: 1 });
   });
 
-  test('mapStateToProps (function): called with Redux state only when arity 1', async function(assert) {
+  it('mapStateToProps (function): called with Redux state only when arity 1', async function() {
     const state = {};
     const store = createStore(() => state);
     this.owner.register('simple-redux:store', store);
@@ -71,11 +71,11 @@ module('Integration | connect', function(hooks) {
     await render(hbs`{{test-target}}`);
 
     const { args } = spy.getCall(0);
-    assert.equal(args[0], state, '`state` should be as is');
-    assert.equal(args.length, 1, '`ownProps` should not be passed');
+    expect(args[0], '`state` should be as is').to.equal(state);
+    expect(args.length, '`ownProps` should not be passed').to.equal(1);
   });
 
-  test('mapStateToProps (function): called with Redux state and `ownProps` when arity 2', async function(assert) {
+  it('mapStateToProps (function): called with Redux state and `ownProps` when arity 2', async function() {
     const state = {};
     const store = createStore(() => state);
     this.owner.register('simple-redux:store', store);
@@ -89,11 +89,11 @@ module('Integration | connect', function(hooks) {
     await render(hbs`{{test-target foo=1}}`);
 
     const { args } = spy.getCall(0);
-    assert.equal(args[0], state, '`state` should be as is');
-    assert.deepEqual(args[1], { foo: 1 }, '`ownProps` should be passed');
+    expect(args[0], '`state` should be as is').to.equal(state);
+    expect(args[1], '`ownProps` should be passed').to.deep.equal({ foo: 1 });
   });
 
-  test('mapStateToProps (function): it sets `stateProps` to connected component', async function(assert) {
+  it('mapStateToProps (function): it sets `stateProps` to connected component', async function() {
     const store = createStore(() => ({
       count: 5,
     }));
@@ -112,16 +112,15 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(instance.get('count'), 5);
-    assert.equal(instance.get('fooPlusCount'), 6);
-    assert.equal(instance.get('bar'), 'test', '`bar` should be still there');
+    expect(instance.get('count')).to.equal(5);
+    expect(instance.get('fooPlusCount')).to.equal(6);
+    expect(instance.get('bar'), '`bar` should be still there').to.equal('test');
   });
 
-  test('mapStateToProps (invalid): it throws when type is invalid', async function(assert) {
+  it('mapStateToProps (invalid): it throws when type is invalid', async function() {
     const oldOnerror = Ember.onerror;
     Ember.onerror = function(error) {
-      assert.equal(
-        error.message,
+      expect(error.message).to.equal(
         'Invalid value of type number for mapStateToProps argument when connecting component component:test-target.'
       );
     };
@@ -134,7 +133,7 @@ module('Integration | connect', function(hooks) {
     Ember.onerror = oldOnerror;
   });
 
-  test('mapDispatchToProps (function): called with `dispatch` and `ownProps` when arity 0', async function(assert) {
+  it('mapDispatchToProps (function): called with `dispatch` and `ownProps` when arity 0', async function() {
     const store = createStore(() => {});
     this.owner.register('simple-redux:store', store);
 
@@ -150,11 +149,11 @@ module('Integration | connect', function(hooks) {
     await render(hbs`{{test-target}}`);
 
     const { args } = spy.getCall(0);
-    assert.equal(args[0], store.dispatch, '`dispatch` should be as is');
-    assert.equal(args.length, 2, '`ownProps` should be passed');
+    expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
+    expect(args.length, '`ownProps` should be passed').to.equal(2);
   });
 
-  test('mapDispatchToProps (function): called with `dispatch` only when arity 1', async function(assert) {
+  it('mapDispatchToProps (function): called with `dispatch` only when arity 1', async function() {
     const store = createStore(() => {});
     this.owner.register('simple-redux:store', store);
 
@@ -174,11 +173,11 @@ module('Integration | connect', function(hooks) {
     await render(hbs`{{test-target}}`);
 
     const { args } = spy.getCall(0);
-    assert.equal(args[0], store.dispatch, '`dispatch` should be as is');
-    assert.equal(args.length, 1, '`ownProps` should not be passed');
+    expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
+    expect(args.length, '`ownProps` should not be passed').to.equal(1);
   });
 
-  test('mapDispatchToProps (function): called with `dispatch` and `ownProps` when arity 2', async function(assert) {
+  it('mapDispatchToProps (function): called with `dispatch` and `ownProps` when arity 2', async function() {
     const store = createStore(() => {});
     this.owner.register('simple-redux:store', store);
 
@@ -198,11 +197,11 @@ module('Integration | connect', function(hooks) {
     await render(hbs`{{test-target}}`);
 
     const { args } = spy.getCall(0);
-    assert.equal(args[0], store.dispatch, '`dispatch` should be as is');
-    assert.equal(args.length, 2, '`ownProps` should be passed');
+    expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
+    expect(args.length, '`ownProps` should be passed').to.equal(2);
   });
 
-  test('mapDispatchToProps (object): wrap each property with `dispatch`', async function(assert) {
+  it('mapDispatchToProps (object): wrap each property with `dispatch`', async function() {
     const store = createStore(() => {});
     this.owner.register('simple-redux:store', store);
     const mapDispatchToProps = {
@@ -224,11 +223,13 @@ module('Integration | connect', function(hooks) {
 
     await render(hbs`{{test-target}}`);
 
-    assert.ok(dispatchSpy.calledOnce, '`dispatch` should be called once');
-    assert.ok(mapDispatchToProps.foo.calledOnce, '`foo` should be called once');
+    expect(dispatchSpy.calledOnce, '`dispatch` should be called once').to.be
+      .true;
+    expect(mapDispatchToProps.foo.calledOnce, '`foo` should be called once').to
+      .be.true;
   });
 
-  test('mapDispatchToProps (missing): add `dispatch` to props', async function(assert) {
+  it('mapDispatchToProps (missing): add `dispatch` to props', async function() {
     const store = createStore(() => {});
     this.owner.register('simple-redux:store', store);
 
@@ -244,18 +245,15 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(
-      instance.get('dispatch'),
-      store.dispatch,
-      '`dispatch` should be injected'
+    expect(instance.get('dispatch'), '`dispatch` should be injected').to.equal(
+      store.dispatch
     );
   });
 
-  test('mapDispatchToProps (invalid): it throws when type is invalid', async function(assert) {
+  it('mapDispatchToProps (invalid): it throws when type is invalid', async function() {
     const oldOnerror = Ember.onerror;
     Ember.onerror = function(error) {
-      assert.equal(
-        error.message,
+      expect(error.message).to.equal(
         'Invalid value of type number for mapDispatchToProps argument when connecting component component:test-target.'
       );
     };
@@ -271,7 +269,7 @@ module('Integration | connect', function(hooks) {
     Ember.onerror = oldOnerror;
   });
 
-  test('default mergeProps: `stateProps` overrides `ownProps`', async function(assert) {
+  it('default mergeProps: `stateProps` overrides `ownProps`', async function() {
     const store = createStore(() => ({
       count: 5,
     }));
@@ -287,11 +285,11 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(instance.get('foo'), 5);
-    assert.equal(instance.get('bar'), 'test', '`bar` should be still there');
+    expect(instance.get('foo')).to.equal(5);
+    expect(instance.get('bar'), '`bar` should be still there').to.equal('test');
   });
 
-  test('default mergeProps: `dispatchProps` overrides `ownProps`', async function(assert) {
+  it('default mergeProps: `dispatchProps` overrides `ownProps`', async function() {
     const mapDispatchToProps = { foo() {} };
     const connectedComponent = connect(
       null,
@@ -305,11 +303,11 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(typeOf(instance.get('foo')), 'function'); // The bound action creator
-    assert.equal(instance.get('bar'), 'test', '`bar` should be still there');
+    expect(instance.get('foo')).to.be.a('function'); // The bound action creator
+    expect(instance.get('bar'), '`bar` should be still there').to.equal('test');
   });
 
-  test('default mergeProps: `dispatchProps` overrides `stateProps`', async function(assert) {
+  it('default mergeProps: `dispatchProps` overrides `stateProps`', async function() {
     const store = createStore(() => ({
       count: 5,
     }));
@@ -328,11 +326,11 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(typeOf(instance.get('foo')), 'function'); // The bound action creator
-    assert.equal(instance.get('bar'), 'test', '`bar` should be still there');
+    expect(instance.get('foo')).to.be.a('function'); // The bound action creator
+    expect(instance.get('bar'), '`bar` should be still there').to.equal('test');
   });
 
-  test('mergeProps (function): result set to connected component', async function(assert) {
+  it('mergeProps (function): result set to connected component', async function() {
     const store = createStore(() => ({
       count: 5,
     }));
@@ -359,14 +357,14 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(instance.get('stateFoo'), 5);
-    assert.equal(typeOf(instance.get('dispatchFoo')), 'function'); // The bound action creator
-    assert.equal(instance.get('ownFoo'), 1);
-    assert.equal(instance.get('foo'), undefined, '`foo` should be undefined');
-    assert.equal(instance.get('bar'), undefined, '`bar` should be undefined');
+    expect(instance.get('stateFoo')).to.equal(5);
+    expect(instance.get('dispatchFoo')).to.be.a('function'); // The bound action creator
+    expect(instance.get('ownFoo')).to.equal(1);
+    expect(instance.get('foo')).to.be.undefined;
+    expect(instance.get('bar')).to.be.undefined;
   });
 
-  test('mergeProps (function): prevents leaking props (only the result will be passed to component)', async function(assert) {
+  it('mergeProps (function): prevents leaking props (only the result will be passed to component)', async function() {
     const mergeProps = (stateProps, dispatchProps, ownProps) => ({
       onClick: ownProps.onClick,
     });
@@ -383,20 +381,14 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(typeOf(instance.get('onClick')), 'function');
-    assert.notOk(
-      instance.hasOwnProperty('foo'),
-      'Property `foo` should not exist'
-    );
-    assert.notOk(
-      instance.hasOwnProperty('bar'),
-      'Property `bar` should not exist'
-    );
-    assert.equal(instance.get('foo'), undefined, '`foo` should be undefined');
-    assert.equal(instance.get('bar'), undefined, '`bar` should be undefined');
+    expect(instance.get('onClick')).to.be.a('function');
+    expect(instance).to.not.have.ownProperty('foo');
+    expect(instance).to.not.have.ownProperty('bar');
+    expect(instance.get('foo')).to.be.undefined;
+    expect(instance.get('bar')).to.be.undefined;
   });
 
-  test('mergeProps (function): prevents leaking props even after updates', async function(assert) {
+  it('mergeProps (function): prevents leaking props even after updates', async function() {
     const DEFAULT_STATE = { passingProp: 'foo' };
     const reducer = (state = DEFAULT_STATE, action) => {
       if (action.type === 'CHANGE_TO_BAR') {
@@ -427,29 +419,22 @@ module('Integration | connect', function(hooks) {
     await click('.test-target');
 
     const instance = spy.getCall(0).args[0];
-    assert.equal(typeOf(instance.get('onClick')), 'function');
-    assert.ok(instance.hasOwnProperty('foo'), 'Property `foo` should exist');
-    assert.notOk(
-      instance.hasOwnProperty('bar'),
-      'Property `bar` should not exist'
-    );
+    expect(instance.get('onClick')).to.be.a('function');
+    expect(instance).to.have.ownProperty('foo');
+    expect(instance).to.not.have.ownProperty('bar');
 
     store.dispatch({
       type: 'CHANGE_TO_BAR',
     });
-    assert.equal(typeOf(instance.get('onClick')), 'function');
-    assert.notOk(
-      instance.hasOwnProperty('foo'),
-      'Property `foo` should not exist'
-    );
-    assert.ok(instance.hasOwnProperty('bar'), 'Property `bar` should exist');
+    expect(instance.get('onClick')).to.be.a('function');
+    expect(instance).to.not.have.ownProperty('foo');
+    expect(instance).to.have.ownProperty('bar');
   });
 
-  test('mergeProps (invalid): it throws when type is invalid', async function(assert) {
+  it('mergeProps (invalid): it throws when type is invalid', async function() {
     const oldOnerror = Ember.onerror;
     Ember.onerror = function(error) {
-      assert.equal(
-        error.message,
+      expect(error.message).to.equal(
         'Invalid value of type number for mergeProps argument when connecting component component:test-target.'
       );
     };
@@ -465,4 +450,37 @@ module('Integration | connect', function(hooks) {
 
     Ember.onerror = oldOnerror;
   });
+
+  /**********************************************************************************/
+  /*                                                                                */
+  /* Cases Listed in https://github.com/reduxjs/react-redux/blob/master/docs/api.md */
+  /*                                                                                */
+  /**********************************************************************************/
+  // it("Examples: inject just dispatch and don't listen to store", async function() {
+  //   const store = createStore(() => ({
+  //     count: 5,
+  //   }));
+  //   this.owner.register('simple-redux:store', store);
+
+  //   const connectedComponent = connect()(ClickForInstance);
+  //   this.owner.register('component:base-target', ClickForInstance);
+  //   this.owner.register('component:test-target', connectedComponent);
+
+  //   const spy = sinon.spy();
+  //   this.set('spy', spy);
+  //   await render(hbs`{{base-target onClick=spy foo=1 bar='test'}}`);
+  //   await click('.test-target');
+
+  //   await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+  //   await click('.test-target');
+
+  //   const baseInstance = spy.getCall(0).args[0];
+  //   const connectedInatance = spy.getCall(1).args[0];
+
+  //   assert.deepEqual(
+  //     [...Object.getOwnPropertyNames(connectedInatance)],
+  //     [...Object.getOwnPropertyNames(baseInstance), 'dispatch'],
+  //     'Connected component should have 1 more prop'
+  //   );
+  // });
 });
