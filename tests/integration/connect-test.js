@@ -11,6 +11,25 @@ import connect from 'ember-simple-redux/connect';
 import ClickForInstance from 'dummy/components/tests/click-for-instance';
 import sinon from 'sinon';
 
+// This function is used to assert throws
+// Bug: https://github.com/emberjs/ember-mocha/issues/141
+async function expectThrow(cb, message) {
+  // Stubbing `exception` for older Ember (>= 2.12)
+  // Ember.onerror for newer Ember (>= 2.18)
+  const spy = sinon.stub(Ember.Test.adapter, 'exception');
+  const oldOnerror = Ember.onError;
+  Ember.onerror = spy;
+
+  await cb();
+
+  expect(spy.calledOnce, `Expected ${cb} to throw an error`).to.be.true;
+  expect(spy.getCall(0).args[0]).to.be.an('error');
+  expect(spy.getCall(0).args[0].message).to.equal(message);
+
+  Ember.onerror = oldOnerror;
+  spy.restore();
+}
+
 describe('Integration | connect', function() {
   setupRenderingTest();
 
@@ -118,19 +137,14 @@ describe('Integration | connect', function() {
   });
 
   it('mapStateToProps (invalid): it throws when type is invalid', async function() {
-    const oldOnerror = Ember.onerror;
-    Ember.onerror = function(error) {
-      expect(error.message).to.equal(
-        'Invalid value of type number for mapStateToProps argument when connecting component component:test-target.'
-      );
-    };
-
     // Purposely pass number
     const connectedComponent = connect(123)(Component);
     this.owner.register('component:test-target', connectedComponent);
-    await render(hbs`{{test-target}}`);
 
-    Ember.onerror = oldOnerror;
+    await expectThrow(
+      async () => await render(hbs`{{test-target}}`),
+      'Invalid value of type number for mapStateToProps argument when connecting component component:test-target.'
+    );
   });
 
   it('mapDispatchToProps (function): called with `dispatch` and `ownProps` when arity 0', async function() {
@@ -251,22 +265,17 @@ describe('Integration | connect', function() {
   });
 
   it('mapDispatchToProps (invalid): it throws when type is invalid', async function() {
-    const oldOnerror = Ember.onerror;
-    Ember.onerror = function(error) {
-      expect(error.message).to.equal(
-        'Invalid value of type number for mapDispatchToProps argument when connecting component component:test-target.'
-      );
-    };
-
     // Purposely pass number
     const connectedComponent = connect(
       null,
       123
     )(Component);
     this.owner.register('component:test-target', connectedComponent);
-    await render(hbs`{{test-target}}`);
 
-    Ember.onerror = oldOnerror;
+    await expectThrow(
+      async () => await render(hbs`{{test-target}}`),
+      'Invalid value of type number for mapDispatchToProps argument when connecting component component:test-target.'
+    );
   });
 
   it('default mergeProps: `stateProps` overrides `ownProps`', async function() {
@@ -432,13 +441,6 @@ describe('Integration | connect', function() {
   });
 
   it('mergeProps (invalid): it throws when type is invalid', async function() {
-    const oldOnerror = Ember.onerror;
-    Ember.onerror = function(error) {
-      expect(error.message).to.equal(
-        'Invalid value of type number for mergeProps argument when connecting component component:test-target.'
-      );
-    };
-
     // Purposely pass number
     const connectedComponent = connect(
       null,
@@ -446,9 +448,11 @@ describe('Integration | connect', function() {
       123
     )(Component);
     this.owner.register('component:test-target', connectedComponent);
-    await render(hbs`{{test-target}}`);
 
-    Ember.onerror = oldOnerror;
+    await expectThrow(
+      async () => await render(hbs`{{test-target}}`),
+      'Invalid value of type number for mergeProps argument when connecting component component:test-target.'
+    );
   });
 
   /**********************************************************************************/
