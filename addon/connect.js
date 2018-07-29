@@ -1,4 +1,5 @@
 import { bindActionCreators } from 'redux';
+import getMutableAttributes from './utils/get-mutable-attributes';
 
 const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
   ...ownProps,
@@ -19,7 +20,7 @@ const connect = (
     } = componentInstance;
     const state = getState();
     let stateProps, dispatchProps, finalProps;
-    let ownProps = componentInstance.getProperties(Object.keys(attrs));
+    let ownProps = getMutableAttributes(attrs);
 
     // Check arity, if arity is 1 then no `ownProps` is needed
     // Follow the sequence in react-redux: Missing, Function
