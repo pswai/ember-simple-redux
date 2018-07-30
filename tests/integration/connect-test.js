@@ -22,9 +22,10 @@ async function expectThrow(cb, message) {
 
   await cb();
 
-  expect(spy.calledOnce, `Expected ${cb} to throw an error`).to.be.true;
-  expect(spy.getCall(0).args[0]).to.be.an('error');
-  expect(spy.getCall(0).args[0].message).to.equal(message);
+  const matcher = sinon.match.instanceOf(Error).and(sinon.match({ message }));
+  expect(spy, `Expected ${cb} to throw an error`).to.have.been.calledOnceWith(
+    matcher
+  );
 
   Ember.onerror = oldOnerror;
   spy.restore();
@@ -155,7 +156,7 @@ describe('Integration | connect', function() {
         this.owner.register('component:test-target', connectedComponent);
 
         await expectThrow(
-          async () => await render(hbs`{{test-target}}`),
+          () => render(hbs`{{test-target}}`),
           'Invalid value of type number for mapStateToProps argument when connecting component component:test-target.'
         );
       });
@@ -292,7 +293,7 @@ describe('Integration | connect', function() {
         this.owner.register('component:test-target', connectedComponent);
 
         await expectThrow(
-          async () => await render(hbs`{{test-target}}`),
+          () => render(hbs`{{test-target}}`),
           'Invalid value of type number for mapDispatchToProps argument when connecting component component:test-target.'
         );
       });
@@ -479,7 +480,7 @@ describe('Integration | connect', function() {
         this.owner.register('component:test-target', connectedComponent);
 
         await expectThrow(
-          async () => await render(hbs`{{test-target}}`),
+          () => render(hbs`{{test-target}}`),
           'Invalid value of type number for mergeProps argument when connecting component component:test-target.'
         );
       });
