@@ -58,401 +58,438 @@ describe('Integration | connect', function() {
     expect(instance.get('bar')).to.equal('test');
   });
 
-  it('mapStateToProps (function): called with Redux state and `ownProps` when arity 0', async function() {
-    const state = {};
-    const store = createStore(() => state);
-    this.owner.register('simple-redux:store', store);
+  describe('with `mapStateToProps`', function() {
+    describe('as function', function() {
+      it('calls `mapStateToProps` with Redux state and `ownProps` when arity 0', async function() {
+        const state = {};
+        const store = createStore(() => state);
+        this.owner.register('simple-redux:store', store);
 
-    // Arity: 0
-    const mapStateToProps = () => {};
-    const spy = sinon.spy(mapStateToProps);
-    const connectedComponent = connect(spy)(Component);
-    this.owner.register('component:test-target', connectedComponent);
+        // Arity: 0
+        const mapStateToProps = () => {};
+        const spy = sinon.spy(mapStateToProps);
+        const connectedComponent = connect(spy)(Component);
+        this.owner.register('component:test-target', connectedComponent);
 
-    await render(hbs`{{test-target foo=1}}`);
+        await render(hbs`{{test-target foo=1}}`);
 
-    const { args } = spy.getCall(0);
-    expect(args[0], '`state` should be as is').to.equal(state);
-    expect(args[1], '`ownProps` should be passed').to.deep.equal({ foo: 1 });
-  });
+        const { args } = spy.getCall(0);
+        expect(args[0], '`state` should be as is').to.equal(state);
+        expect(args[1], '`ownProps` should be passed').to.deep.equal({
+          foo: 1,
+        });
+      });
 
-  it('mapStateToProps (function): called with Redux state only when arity 1', async function() {
-    const state = {};
-    const store = createStore(() => state);
-    this.owner.register('simple-redux:store', store);
+      it('calls `mapStateToProps` with Redux state only when arity 1', async function() {
+        const state = {};
+        const store = createStore(() => state);
+        this.owner.register('simple-redux:store', store);
 
-    // Arity: 1
-    const mapStateToProps = state => state;
-    const spy = sinon.spy(mapStateToProps);
-    const connectedComponent = connect(spy)(Component);
-    this.owner.register('component:test-target', connectedComponent);
+        // Arity: 1
+        const mapStateToProps = state => state;
+        const spy = sinon.spy(mapStateToProps);
+        const connectedComponent = connect(spy)(Component);
+        this.owner.register('component:test-target', connectedComponent);
 
-    await render(hbs`{{test-target}}`);
+        await render(hbs`{{test-target}}`);
 
-    const { args } = spy.getCall(0);
-    expect(args[0], '`state` should be as is').to.equal(state);
-    expect(args.length, '`ownProps` should not be passed').to.equal(1);
-  });
+        const { args } = spy.getCall(0);
+        expect(args[0], '`state` should be as is').to.equal(state);
+        expect(args.length, '`ownProps` should not be passed').to.equal(1);
+      });
 
-  it('mapStateToProps (function): called with Redux state and `ownProps` when arity 2', async function() {
-    const state = {};
-    const store = createStore(() => state);
-    this.owner.register('simple-redux:store', store);
+      it('calls `mapStateToProps` with Redux state and `ownProps` when arity 2', async function() {
+        const state = {};
+        const store = createStore(() => state);
+        this.owner.register('simple-redux:store', store);
 
-    // Arity: 2
-    const mapStateToProps = (state, ownProps) => ({ state, ownProps });
-    const spy = sinon.spy(mapStateToProps);
-    const connectedComponent = connect(spy)(Component);
-    this.owner.register('component:test-target', connectedComponent);
+        // Arity: 2
+        const mapStateToProps = (state, ownProps) => ({ state, ownProps });
+        const spy = sinon.spy(mapStateToProps);
+        const connectedComponent = connect(spy)(Component);
+        this.owner.register('component:test-target', connectedComponent);
 
-    await render(hbs`{{test-target foo=1}}`);
+        await render(hbs`{{test-target foo=1}}`);
 
-    const { args } = spy.getCall(0);
-    expect(args[0], '`state` should be as is').to.equal(state);
-    expect(args[1], '`ownProps` should be passed').to.deep.equal({ foo: 1 });
-  });
+        const { args } = spy.getCall(0);
+        expect(args[0], '`state` should be as is').to.equal(state);
+        expect(args[1], '`ownProps` should be passed').to.deep.equal({
+          foo: 1,
+        });
+      });
 
-  it('mapStateToProps (function): it sets `stateProps` to connected component', async function() {
-    const store = createStore(() => ({
-      count: 5,
-    }));
-    this.owner.register('simple-redux:store', store);
+      it('sets `stateProps` to connected component', async function() {
+        const store = createStore(() => ({
+          count: 5,
+        }));
+        this.owner.register('simple-redux:store', store);
 
-    const mapStateToProps = (state, ownProps) => ({
-      count: state.count,
-      fooPlusCount: state.count + ownProps.foo,
+        const mapStateToProps = (state, ownProps) => ({
+          count: state.count,
+          fooPlusCount: state.count + ownProps.foo,
+        });
+        const connectedComponent = connect(mapStateToProps)(ClickForInstance);
+        this.owner.register('component:test-target', connectedComponent);
+
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(instance.get('count')).to.equal(5);
+        expect(instance.get('fooPlusCount')).to.equal(6);
+        expect(instance.get('bar'), '`bar` should be still there').to.equal(
+          'test'
+        );
+      });
     });
-    const connectedComponent = connect(mapStateToProps)(ClickForInstance);
-    this.owner.register('component:test-target', connectedComponent);
 
-    const spy = sinon.spy();
-    this.set('spy', spy);
-    await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
-    await click('.test-target');
+    describe('invalid', function() {
+      it('throws with proper message', async function() {
+        // Purposely pass number
+        const connectedComponent = connect(123)(Component);
+        this.owner.register('component:test-target', connectedComponent);
 
-    const instance = spy.getCall(0).args[0];
-    expect(instance.get('count')).to.equal(5);
-    expect(instance.get('fooPlusCount')).to.equal(6);
-    expect(instance.get('bar'), '`bar` should be still there').to.equal('test');
-  });
-
-  it('mapStateToProps (invalid): it throws when type is invalid', async function() {
-    // Purposely pass number
-    const connectedComponent = connect(123)(Component);
-    this.owner.register('component:test-target', connectedComponent);
-
-    await expectThrow(
-      async () => await render(hbs`{{test-target}}`),
-      'Invalid value of type number for mapStateToProps argument when connecting component component:test-target.'
-    );
-  });
-
-  it('mapDispatchToProps (function): called with `dispatch` and `ownProps` when arity 0', async function() {
-    const store = createStore(() => {});
-    this.owner.register('simple-redux:store', store);
-
-    // Arity: 0
-    const mapDispatchToProps = () => {};
-    const spy = sinon.spy(mapDispatchToProps);
-    const connectedComponent = connect(
-      null,
-      spy
-    )(Component);
-    this.owner.register('component:test-target', connectedComponent);
-
-    await render(hbs`{{test-target}}`);
-
-    const { args } = spy.getCall(0);
-    expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
-    expect(args.length, '`ownProps` should be passed').to.equal(2);
-  });
-
-  it('mapDispatchToProps (function): called with `dispatch` only when arity 1', async function() {
-    const store = createStore(() => {});
-    this.owner.register('simple-redux:store', store);
-
-    // Arity: 1
-    const mapDispatchToProps = dispatch => ({
-      dispatchProp() {
-        dispatch({});
-      },
+        await expectThrow(
+          async () => await render(hbs`{{test-target}}`),
+          'Invalid value of type number for mapStateToProps argument when connecting component component:test-target.'
+        );
+      });
     });
-    const spy = sinon.spy(mapDispatchToProps);
-    const connectedComponent = connect(
-      null,
-      spy
-    )(Component);
-    this.owner.register('component:test-target', connectedComponent);
-
-    await render(hbs`{{test-target}}`);
-
-    const { args } = spy.getCall(0);
-    expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
-    expect(args.length, '`ownProps` should not be passed').to.equal(1);
   });
 
-  it('mapDispatchToProps (function): called with `dispatch` and `ownProps` when arity 2', async function() {
-    const store = createStore(() => {});
-    this.owner.register('simple-redux:store', store);
+  describe('with `mapDispatchToProps`', function() {
+    describe('as function', function() {
+      it('calls `mapDispatchToProps` with `dispatch` and `ownProps` when arity 0', async function() {
+        const store = createStore(() => {});
+        this.owner.register('simple-redux:store', store);
 
-    // Arity: 2
-    const mapDispatchToProps = (dispatch, ownProps) => ({
-      dispatchProp() {
-        dispatch(ownProps);
-      },
+        // Arity: 0
+        const mapDispatchToProps = () => {};
+        const spy = sinon.spy(mapDispatchToProps);
+        const connectedComponent = connect(
+          null,
+          spy
+        )(Component);
+        this.owner.register('component:test-target', connectedComponent);
+
+        await render(hbs`{{test-target}}`);
+
+        const { args } = spy.getCall(0);
+        expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
+        expect(args.length, '`ownProps` should be passed').to.equal(2);
+      });
+
+      it('calls `mapDispatchToProps` with `dispatch` only when arity 1', async function() {
+        const store = createStore(() => {});
+        this.owner.register('simple-redux:store', store);
+
+        // Arity: 1
+        const mapDispatchToProps = dispatch => ({
+          dispatchProp() {
+            dispatch({});
+          },
+        });
+        const spy = sinon.spy(mapDispatchToProps);
+        const connectedComponent = connect(
+          null,
+          spy
+        )(Component);
+        this.owner.register('component:test-target', connectedComponent);
+
+        await render(hbs`{{test-target}}`);
+
+        const { args } = spy.getCall(0);
+        expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
+        expect(args.length, '`ownProps` should not be passed').to.equal(1);
+      });
+
+      it('calls `mapDispatchToProps` with `dispatch` and `ownProps` when arity 2', async function() {
+        const store = createStore(() => {});
+        this.owner.register('simple-redux:store', store);
+
+        // Arity: 2
+        const mapDispatchToProps = (dispatch, ownProps) => ({
+          dispatchProp() {
+            dispatch(ownProps);
+          },
+        });
+        const spy = sinon.spy(mapDispatchToProps);
+        const connectedComponent = connect(
+          null,
+          spy
+        )(Component);
+        this.owner.register('component:test-target', connectedComponent);
+
+        await render(hbs`{{test-target}}`);
+
+        const { args } = spy.getCall(0);
+        expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
+        expect(args.length, '`ownProps` should be passed').to.equal(2);
+      });
     });
-    const spy = sinon.spy(mapDispatchToProps);
-    const connectedComponent = connect(
-      null,
-      spy
-    )(Component);
-    this.owner.register('component:test-target', connectedComponent);
 
-    await render(hbs`{{test-target}}`);
-
-    const { args } = spy.getCall(0);
-    expect(args[0], '`dispatch` should be as is').to.equal(store.dispatch);
-    expect(args.length, '`ownProps` should be passed').to.equal(2);
-  });
-
-  it('mapDispatchToProps (object): wrap each property with `dispatch`', async function() {
-    const store = createStore(() => {});
-    this.owner.register('simple-redux:store', store);
-    const mapDispatchToProps = {
-      foo: sinon.stub().returns({
-        type: 'DO_SOMETHING',
-      }),
-    };
-    const dispatchSpy = sinon.spy(store, 'dispatch');
-    const BaseComponent = Component.extend({
-      didInsertElement() {
-        this.foo();
-      },
-    });
-    const connectedComponent = connect(
-      null,
-      mapDispatchToProps
-    )(BaseComponent);
-    this.owner.register('component:test-target', connectedComponent);
-
-    await render(hbs`{{test-target}}`);
-
-    expect(dispatchSpy.calledOnce, '`dispatch` should be called once').to.be
-      .true;
-    expect(mapDispatchToProps.foo.calledOnce, '`foo` should be called once').to
-      .be.true;
-  });
-
-  it('mapDispatchToProps (missing): add `dispatch` to props', async function() {
-    const store = createStore(() => {});
-    this.owner.register('simple-redux:store', store);
-
-    const connectedComponent = connect(
-      null,
-      null
-    )(ClickForInstance);
-    this.owner.register('component:test-target', connectedComponent);
-
-    const spy = sinon.spy();
-    this.set('spy', spy);
-    await render(hbs`{{test-target onClick=spy}}`);
-    await click('.test-target');
-
-    const instance = spy.getCall(0).args[0];
-    expect(instance.get('dispatch'), '`dispatch` should be injected').to.equal(
-      store.dispatch
-    );
-  });
-
-  it('mapDispatchToProps (invalid): it throws when type is invalid', async function() {
-    // Purposely pass number
-    const connectedComponent = connect(
-      null,
-      123
-    )(Component);
-    this.owner.register('component:test-target', connectedComponent);
-
-    await expectThrow(
-      async () => await render(hbs`{{test-target}}`),
-      'Invalid value of type number for mapDispatchToProps argument when connecting component component:test-target.'
-    );
-  });
-
-  it('default mergeProps: `stateProps` overrides `ownProps`', async function() {
-    const store = createStore(() => ({
-      count: 5,
-    }));
-    this.owner.register('simple-redux:store', store);
-
-    const mapStateToProps = ({ count }) => ({ foo: count });
-    const connectedComponent = connect(mapStateToProps)(ClickForInstance);
-    this.owner.register('component:test-target', connectedComponent);
-
-    const spy = sinon.spy();
-    this.set('spy', spy);
-    await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
-    await click('.test-target');
-
-    const instance = spy.getCall(0).args[0];
-    expect(instance.get('foo')).to.equal(5);
-    expect(instance.get('bar'), '`bar` should be still there').to.equal('test');
-  });
-
-  it('default mergeProps: `dispatchProps` overrides `ownProps`', async function() {
-    const mapDispatchToProps = { foo() {} };
-    const connectedComponent = connect(
-      null,
-      mapDispatchToProps
-    )(ClickForInstance);
-    this.owner.register('component:test-target', connectedComponent);
-
-    const spy = sinon.spy();
-    this.set('spy', spy);
-    await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
-    await click('.test-target');
-
-    const instance = spy.getCall(0).args[0];
-    expect(instance.get('foo')).to.be.a('function'); // The bound action creator
-    expect(instance.get('bar'), '`bar` should be still there').to.equal('test');
-  });
-
-  it('default mergeProps: `dispatchProps` overrides `stateProps`', async function() {
-    const store = createStore(() => ({
-      count: 5,
-    }));
-    this.owner.register('simple-redux:store', store);
-    const mapStateToProps = ({ count }) => ({ foo: count });
-    const mapDispatchToProps = { foo() {} };
-    const connectedComponent = connect(
-      mapStateToProps,
-      mapDispatchToProps
-    )(ClickForInstance);
-    this.owner.register('component:test-target', connectedComponent);
-
-    const spy = sinon.spy();
-    this.set('spy', spy);
-    await render(hbs`{{test-target onClick=spy bar='test'}}`);
-    await click('.test-target');
-
-    const instance = spy.getCall(0).args[0];
-    expect(instance.get('foo')).to.be.a('function'); // The bound action creator
-    expect(instance.get('bar'), '`bar` should be still there').to.equal('test');
-  });
-
-  it('mergeProps (function): result set to connected component', async function() {
-    const store = createStore(() => ({
-      count: 5,
-    }));
-    this.owner.register('simple-redux:store', store);
-
-    const mapStateToProps = ({ count }) => ({ foo: count });
-    const mapDispatchToProps = { foo() {} };
-    const mergeProps = (stateProps, dispatchProps, ownProps) => ({
-      stateFoo: stateProps.foo,
-      dispatchFoo: dispatchProps.foo,
-      ownFoo: ownProps.foo,
-      onClick: ownProps.onClick,
-    });
-    const connectedComponent = connect(
-      mapStateToProps,
-      mapDispatchToProps,
-      mergeProps
-    )(ClickForInstance);
-    this.owner.register('component:test-target', connectedComponent);
-
-    const spy = sinon.spy();
-    this.set('spy', spy);
-    await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
-    await click('.test-target');
-
-    const instance = spy.getCall(0).args[0];
-    expect(instance.get('stateFoo')).to.equal(5);
-    expect(instance.get('dispatchFoo')).to.be.a('function'); // The bound action creator
-    expect(instance.get('ownFoo')).to.equal(1);
-    expect(instance.get('foo')).to.be.undefined;
-    expect(instance.get('bar')).to.be.undefined;
-  });
-
-  it('mergeProps (function): prevents leaking props (only the result will be passed to component)', async function() {
-    const mergeProps = (stateProps, dispatchProps, ownProps) => ({
-      onClick: ownProps.onClick,
-    });
-    const connectedComponent = connect(
-      null,
-      null,
-      mergeProps
-    )(ClickForInstance);
-    this.owner.register('component:test-target', connectedComponent);
-
-    const spy = sinon.spy();
-    this.set('spy', spy);
-    await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
-    await click('.test-target');
-
-    const instance = spy.getCall(0).args[0];
-    expect(instance.get('onClick')).to.be.a('function');
-    expect(instance).to.not.have.ownProperty('foo');
-    expect(instance).to.not.have.ownProperty('bar');
-    expect(instance.get('foo')).to.be.undefined;
-    expect(instance.get('bar')).to.be.undefined;
-  });
-
-  it('mergeProps (function): prevents leaking props even after updates', async function() {
-    const DEFAULT_STATE = { passingProp: 'foo' };
-    const reducer = (state = DEFAULT_STATE, action) => {
-      if (action.type === 'CHANGE_TO_BAR') {
-        return {
-          passingProp: 'bar',
+    describe('as object', function() {
+      it('wraps each property with `dispatch`', async function() {
+        const store = createStore(() => {});
+        this.owner.register('simple-redux:store', store);
+        const mapDispatchToProps = {
+          foo: sinon.stub().returns({
+            type: 'DO_SOMETHING',
+          }),
         };
-      }
-      return state;
-    };
-    const store = createStore(reducer);
-    this.owner.register('simple-redux:store', store);
+        const dispatchSpy = sinon.spy(store, 'dispatch');
+        const BaseComponent = Component.extend({
+          didInsertElement() {
+            this.foo();
+          },
+        });
+        const connectedComponent = connect(
+          null,
+          mapDispatchToProps
+        )(BaseComponent);
+        this.owner.register('component:test-target', connectedComponent);
 
-    const mapStateToProps = state => state;
-    const mergeProps = (stateProps, dispatchProps, ownProps) => ({
-      onClick: ownProps.onClick,
-      [stateProps.passingProp]: ownProps[stateProps.passingProp],
+        await render(hbs`{{test-target}}`);
+
+        expect(dispatchSpy.calledOnce, '`dispatch` should be called once').to.be
+          .true;
+        expect(mapDispatchToProps.foo.calledOnce, '`foo` should be called once')
+          .to.be.true;
+      });
     });
-    const connectedComponent = connect(
-      mapStateToProps,
-      null,
-      mergeProps
-    )(ClickForInstance);
-    this.owner.register('component:test-target', connectedComponent);
 
-    const spy = sinon.spy();
-    this.set('spy', spy);
-    await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
-    await click('.test-target');
+    describe('misssing', function() {
+      it('adds `dispatch` to props', async function() {
+        const store = createStore(() => {});
+        this.owner.register('simple-redux:store', store);
 
-    const instance = spy.getCall(0).args[0];
-    expect(instance.get('onClick')).to.be.a('function');
-    expect(instance).to.have.ownProperty('foo');
-    expect(instance).to.not.have.ownProperty('bar');
+        const connectedComponent = connect(
+          null,
+          null
+        )(ClickForInstance);
+        this.owner.register('component:test-target', connectedComponent);
 
-    store.dispatch({
-      type: 'CHANGE_TO_BAR',
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(
+          instance.get('dispatch'),
+          '`dispatch` should be injected'
+        ).to.equal(store.dispatch);
+      });
     });
-    expect(instance.get('onClick')).to.be.a('function');
-    expect(instance).to.not.have.ownProperty('foo');
-    expect(instance).to.have.ownProperty('bar');
+
+    describe('invalid', function() {
+      it('throws with proper message', async function() {
+        // Purposely pass number
+        const connectedComponent = connect(
+          null,
+          123
+        )(Component);
+        this.owner.register('component:test-target', connectedComponent);
+
+        await expectThrow(
+          async () => await render(hbs`{{test-target}}`),
+          'Invalid value of type number for mapDispatchToProps argument when connecting component component:test-target.'
+        );
+      });
+    });
   });
 
-  it('mergeProps (invalid): it throws when type is invalid', async function() {
-    // Purposely pass number
-    const connectedComponent = connect(
-      null,
-      null,
-      123
-    )(Component);
-    this.owner.register('component:test-target', connectedComponent);
+  describe('with `mergeProps`', function() {
+    describe('missing', function() {
+      it('gives `stateProps` precedence over `ownProps`', async function() {
+        const store = createStore(() => ({
+          count: 5,
+        }));
+        this.owner.register('simple-redux:store', store);
 
-    await expectThrow(
-      async () => await render(hbs`{{test-target}}`),
-      'Invalid value of type number for mergeProps argument when connecting component component:test-target.'
-    );
+        const mapStateToProps = ({ count }) => ({ foo: count });
+        const connectedComponent = connect(mapStateToProps)(ClickForInstance);
+        this.owner.register('component:test-target', connectedComponent);
+
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(instance.get('foo')).to.equal(5);
+        expect(instance.get('bar'), '`bar` should be still there').to.equal(
+          'test'
+        );
+      });
+
+      it('gives `dispatchProps` precedence over `ownProps`', async function() {
+        const mapDispatchToProps = { foo() {} };
+        const connectedComponent = connect(
+          null,
+          mapDispatchToProps
+        )(ClickForInstance);
+        this.owner.register('component:test-target', connectedComponent);
+
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(instance.get('foo')).to.be.a('function'); // The bound action creator
+        expect(instance.get('bar'), '`bar` should be still there').to.equal(
+          'test'
+        );
+      });
+
+      it('gives `dispatchProps` precedence over `stateProps`', async function() {
+        const store = createStore(() => ({
+          count: 5,
+        }));
+        this.owner.register('simple-redux:store', store);
+        const mapStateToProps = ({ count }) => ({ foo: count });
+        const mapDispatchToProps = { foo() {} };
+        const connectedComponent = connect(
+          mapStateToProps,
+          mapDispatchToProps
+        )(ClickForInstance);
+        this.owner.register('component:test-target', connectedComponent);
+
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy bar='test'}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(instance.get('foo')).to.be.a('function'); // The bound action creator
+        expect(instance.get('bar'), '`bar` should be still there').to.equal(
+          'test'
+        );
+      });
+    });
+
+    describe('as function', function() {
+      it('sets the result to connected component', async function() {
+        const store = createStore(() => ({
+          count: 5,
+        }));
+        this.owner.register('simple-redux:store', store);
+
+        const mapStateToProps = ({ count }) => ({ foo: count });
+        const mapDispatchToProps = { foo() {} };
+        const mergeProps = (stateProps, dispatchProps, ownProps) => ({
+          stateFoo: stateProps.foo,
+          dispatchFoo: dispatchProps.foo,
+          ownFoo: ownProps.foo,
+          onClick: ownProps.onClick,
+        });
+        const connectedComponent = connect(
+          mapStateToProps,
+          mapDispatchToProps,
+          mergeProps
+        )(ClickForInstance);
+        this.owner.register('component:test-target', connectedComponent);
+
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(instance.get('stateFoo')).to.equal(5);
+        expect(instance.get('dispatchFoo')).to.be.a('function'); // The bound action creator
+        expect(instance.get('ownFoo')).to.equal(1);
+        expect(instance.get('foo')).to.be.undefined;
+        expect(instance.get('bar')).to.be.undefined;
+      });
+
+      it('prevents leaking props (only the result will be passed to component)', async function() {
+        const mergeProps = (stateProps, dispatchProps, ownProps) => ({
+          onClick: ownProps.onClick,
+        });
+        const connectedComponent = connect(
+          null,
+          null,
+          mergeProps
+        )(ClickForInstance);
+        this.owner.register('component:test-target', connectedComponent);
+
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(instance.get('onClick')).to.be.a('function');
+        expect(instance).to.not.have.ownProperty('foo');
+        expect(instance).to.not.have.ownProperty('bar');
+        expect(instance.get('foo')).to.be.undefined;
+        expect(instance.get('bar')).to.be.undefined;
+      });
+
+      it('prevents leaking props even after updates', async function() {
+        const DEFAULT_STATE = { passingProp: 'foo' };
+        const reducer = (state = DEFAULT_STATE, action) => {
+          if (action.type === 'CHANGE_TO_BAR') {
+            return {
+              passingProp: 'bar',
+            };
+          }
+          return state;
+        };
+        const store = createStore(reducer);
+        this.owner.register('simple-redux:store', store);
+
+        const mapStateToProps = state => state;
+        const mergeProps = (stateProps, dispatchProps, ownProps) => ({
+          onClick: ownProps.onClick,
+          [stateProps.passingProp]: ownProps[stateProps.passingProp],
+        });
+        const connectedComponent = connect(
+          mapStateToProps,
+          null,
+          mergeProps
+        )(ClickForInstance);
+        this.owner.register('component:test-target', connectedComponent);
+
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(instance.get('onClick')).to.be.a('function');
+        expect(instance).to.have.ownProperty('foo');
+        expect(instance).to.not.have.ownProperty('bar');
+
+        store.dispatch({
+          type: 'CHANGE_TO_BAR',
+        });
+        expect(instance.get('onClick')).to.be.a('function');
+        expect(instance).to.not.have.ownProperty('foo');
+        expect(instance).to.have.ownProperty('bar');
+      });
+    });
+
+    describe('invalid', function() {
+      it('throws with proper message', async function() {
+        // Purposely pass number
+        const connectedComponent = connect(
+          null,
+          null,
+          123
+        )(Component);
+        this.owner.register('component:test-target', connectedComponent);
+
+        await expectThrow(
+          async () => await render(hbs`{{test-target}}`),
+          'Invalid value of type number for mergeProps argument when connecting component component:test-target.'
+        );
+      });
+    });
   });
 
   /**********************************************************************************/
