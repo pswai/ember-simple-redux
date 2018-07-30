@@ -424,8 +424,8 @@ describe('Integration | connect', function() {
 
         const instance = spy.getCall(0).args[0];
         expect(instance.get('onClick')).to.be.a('function');
-        expect(instance).to.not.have.ownProperty('foo');
-        expect(instance).to.not.have.ownProperty('bar');
+        expect(instance).to.not.have.own.property('foo');
+        expect(instance).to.not.have.own.property('bar');
         expect(instance.get('foo')).to.be.undefined;
         expect(instance.get('bar')).to.be.undefined;
       });
@@ -462,15 +462,15 @@ describe('Integration | connect', function() {
 
         const instance = spy.getCall(0).args[0];
         expect(instance.get('onClick')).to.be.a('function');
-        expect(instance).to.have.ownProperty('foo');
-        expect(instance).to.not.have.ownProperty('bar');
+        expect(instance).to.have.own.property('foo');
+        expect(instance).to.not.have.own.property('bar');
 
         store.dispatch({
           type: 'CHANGE_TO_BAR',
         });
         expect(instance.get('onClick')).to.be.a('function');
-        expect(instance).to.not.have.ownProperty('foo');
-        expect(instance).to.have.ownProperty('bar');
+        expect(instance).to.not.have.own.property('foo');
+        expect(instance).to.have.own.property('bar');
       });
     });
 
