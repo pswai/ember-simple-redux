@@ -6,7 +6,7 @@ import { click, render, getContext } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
 import Component from '@ember/component';
 import { typeOf } from '@ember/utils';
-import { createStore } from 'redux';
+import { createStore, bindActionCreators } from 'redux';
 import connect from 'ember-simple-redux/connect';
 import ClickForInstance from 'dummy/components/tests/click-for-instance';
 import sinon from 'sinon';
@@ -337,7 +337,7 @@ describe('Integration | connect', function() {
         await click('.test-target');
 
         const instance = spy.getCall(0).args[0];
-        expect(instance.get('foo')).to.be.a('function'); // The bound action creator
+        expect(instance).respondsTo('foo'); // The bound action creator
         expect(instance.get('bar'), '`bar` should be still there').to.equal(
           'test'
         );
@@ -361,7 +361,7 @@ describe('Integration | connect', function() {
         await click('.test-target');
 
         const instance = spy.getCall(0).args[0];
-        expect(instance.get('foo')).to.be.a('function'); // The bound action creator
+        expect(instance).respondsTo('foo'); // The bound action creator
         expect(instance.get('bar'), '`bar` should be still there').to.equal(
           'test'
         );
@@ -396,7 +396,7 @@ describe('Integration | connect', function() {
 
         const instance = spy.getCall(0).args[0];
         expect(instance.get('stateFoo')).to.equal(5);
-        expect(instance.get('dispatchFoo')).to.be.a('function'); // The bound action creator
+        expect(instance).respondsTo('dispatchFoo'); // The bound action creator
         expect(instance.get('ownFoo')).to.equal(1);
         expect(instance.get('foo')).to.be.undefined;
         expect(instance.get('bar')).to.be.undefined;
@@ -419,7 +419,7 @@ describe('Integration | connect', function() {
         await click('.test-target');
 
         const instance = spy.getCall(0).args[0];
-        expect(instance.get('onClick')).to.be.a('function');
+        expect(instance).respondsTo('onClick');
         expect(instance).to.not.have.own.property('foo');
         expect(instance).to.not.have.own.property('bar');
         expect(instance.get('foo')).to.be.undefined;
@@ -456,14 +456,14 @@ describe('Integration | connect', function() {
         await click('.test-target');
 
         const instance = spy.getCall(0).args[0];
-        expect(instance.get('onClick')).to.be.a('function');
+        expect(instance).respondsTo('onClick');
         expect(instance).to.have.own.property('foo');
         expect(instance).to.not.have.own.property('bar');
 
         store.dispatch({
           type: 'CHANGE_TO_BAR',
         });
-        expect(instance.get('onClick')).to.be.a('function');
+        expect(instance).respondsTo('onClick');
         expect(instance).to.not.have.own.property('foo');
         expect(instance).to.have.own.property('bar');
       });
@@ -487,36 +487,274 @@ describe('Integration | connect', function() {
     });
   });
 
-  /**********************************************************************************/
-  /*                                                                                */
-  /* Cases Listed in https://github.com/reduxjs/react-redux/blob/master/docs/api.md */
-  /*                                                                                */
-  /**********************************************************************************/
-  // it("Examples: inject just dispatch and don't listen to store", async function() {
-  //   const store = createStore(() => ({
-  //     count: 5,
-  //   }));
-  //   this.owner.register('simple-redux:store', store);
+  /*******************************************************************************************/
+  /*                                                                                         */
+  /* Cases Listed in https://github.com/reduxjs/react-redux/blob/master/docs/api.md#examples */
+  /* Some cases are omitted due to high similarity (those with action creators)              */
+  /*                                                                                         */
+  /*******************************************************************************************/
+  describe('in API examples', function() {
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#inject-just-dispatch-and-dont-listen-to-store
+    it("injects just `dispatch` and don't listen to store", async function() {
+      const store = setupStore(() => {});
+      const subscribeSpy = sinon.spy(store, 'subscribe');
 
-  //   const connectedComponent = connect()(ClickForInstance);
-  //   this.owner.register('component:base-target', ClickForInstance);
-  //   this.owner.register('component:test-target', connectedComponent);
+      const connectedComponent = connect()(ClickForInstance);
+      this.owner.register('component:base-target', ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
 
-  //   const spy = sinon.spy();
-  //   this.set('spy', spy);
-  //   await render(hbs`{{base-target onClick=spy foo=1 bar='test'}}`);
-  //   await click('.test-target');
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{base-target onClick=spy}}`);
+      await click('.test-target');
 
-  //   await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
-  //   await click('.test-target');
+      await render(hbs`{{test-target onClick=spy}}`);
+      await click('.test-target');
 
-  //   const baseInstance = spy.getCall(0).args[0];
-  //   const connectedInatance = spy.getCall(1).args[0];
+      const baseInstanceProps = Object.getOwnPropertyNames(
+        spy.getCall(0).args[0]
+      );
+      const connectedInstance = spy.getCall(1).args[0];
+      const connectedInstanceProps = Object.getOwnPropertyNames(
+        connectedInstance
+      );
 
-  //   assert.deepEqual(
-  //     [...Object.getOwnPropertyNames(connectedInatance)],
-  //     [...Object.getOwnPropertyNames(baseInstance), 'dispatch'],
-  //     'Connected component should have 1 more prop'
-  //   );
-  // });
+      // Injects just dispatch
+      expect(connectedInstance).itself.respondsTo('dispatch');
+      expect(connectedInstanceProps)
+        .to.include.members(baseInstanceProps)
+        .and.have.lengthOf(baseInstanceProps.length + 1);
+
+      // Don't listen to store
+      expect(subscribeSpy).to.have.not.been.called;
+    });
+
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#inject-all-action-creators--addtodo-completetodo--without-subscribing-to-the-store
+    it('injects all action creates without subscribing to the store', async function() {
+      const store = setupStore(() => {});
+      const subscribeSpy = sinon.spy(store, 'subscribe');
+      const dispatchSpy = sinon.spy(store, 'dispatch');
+
+      const actionCreators = {
+        foo: sinon.stub().returns({ type: 'foo' }),
+        bar() {},
+      };
+      const connectedComponent = connect(
+        null,
+        actionCreators
+      )(ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+
+      // Injects `foo` and `bar` wrapped with `dispatch`
+      expect(instance).itself.respondsTo('foo');
+      expect(instance).itself.respondsTo('bar');
+
+      instance.get('foo')();
+      expect(actionCreators.foo).to.have.been.calledOnce;
+      expect(dispatchSpy).to.have.been.calledOnce;
+
+      // Don't listen to store
+      expect(subscribeSpy).to.have.not.been.called;
+    });
+
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#inject-dispatch-and-every-field-in-the-global-state
+    it('injects `dispatch` and every field in the global state', async function() {
+      setupStore(() => ({ foo: 3, bar: 4 }));
+
+      const connectedComponent = connect(state => state)(ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+
+      // Injects `dispatch`
+      expect(instance).itself.respondsTo('dispatch');
+
+      // Injects every field
+      expect(instance).to.own.property('foo', 3);
+      expect(instance).to.own.property('bar', 4);
+    });
+
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#inject-dispatch-and-todos
+    it('injects `dispatch` and `todos`', async function() {
+      const todos = [];
+      setupStore(() => ({ todos }));
+
+      const mapStateToProps = state => ({ todos: state.todos });
+      const connectedComponent = connect(mapStateToProps)(ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+
+      // Injects `dispatch`
+      expect(instance).itself.respondsTo('dispatch');
+
+      // Injects every field
+      expect(instance).to.have.own.property('todos', todos);
+    });
+
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#inject-todos-and-all-action-creators
+    it('injects `todos` and all action creators', async function() {
+      const todos = [];
+      const store = setupStore(() => ({ todos }));
+      const dispatchSpy = sinon.spy(store, 'dispatch');
+
+      const mapStateToProps = state => ({ todos: state.todos });
+      const actionCreators = {
+        foo: sinon.stub().returns({ type: 'foo' }),
+        bar() {},
+      };
+      const connectedComponent = connect(
+        mapStateToProps,
+        actionCreators
+      )(ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+
+      // Injects `todos`
+      expect(instance).to.have.own.property('todos', todos);
+
+      // Injects all action creators
+      expect(instance).respondsTo('foo');
+      expect(instance).respondsTo('bar');
+
+      instance.get('foo')();
+      expect(dispatchSpy).to.have.been.calledOnce;
+    });
+
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#inject-todos-and-all-action-creators-addtodo-completetodo--as-actions
+    it('injects `todos` and all action creators as `actions`', async function() {
+      const todos = [];
+      const store = setupStore(() => ({ todos }));
+      const dispatchSpy = sinon.spy(store, 'dispatch');
+
+      const mapStateToProps = state => ({ todos: state.todos });
+      const actionCreators = dispatch => ({
+        actions: bindActionCreators(
+          {
+            foo: sinon.stub().returns({ type: 'foo' }),
+            bar() {},
+          },
+          dispatch
+        ),
+      });
+      const connectedComponent = connect(
+        mapStateToProps,
+        actionCreators
+      )(ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+
+      // Injects `todos`
+      expect(instance).to.have.own.property('todos', todos);
+
+      // Injects all action creators as `actions`
+      expect(instance)
+        .to.have.own.property('actions')
+        .that.itself.respondsTo('foo')
+        .and.itself.respondsTo('bar');
+
+      instance.get('actions.foo')();
+      expect(dispatchSpy).to.have.been.calledOnce;
+    });
+
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#inject-todos-of-a-specific-user-depending-on-props
+    it('injects `todos` of a specific user depending on props', async function() {
+      const todos = {
+        foo: [],
+        bar: [],
+      };
+      setupStore(() => ({ todos }));
+
+      const mapStateToProps = (state, ownProps) => ({
+        todos: state.todos[ownProps.userId],
+      });
+      const connectedComponent = connect(mapStateToProps)(ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy userId='bar'}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+
+      // Injects the correct `todos`
+      expect(instance).to.have.own.property('todos', todos.bar);
+    });
+
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#inject-todos-of-a-specific-user-depending-on-props-and-inject-propsuserid-into-the-action
+    it('injects `todos` of a specific user depending on props and injects `props.userId` into the action', async function() {
+      const todos = {
+        foo: [],
+        bar: [],
+      };
+      setupStore(() => ({ todos }));
+
+      const mapStateToProps = state => ({
+        todos: state.todos,
+      });
+      const actionCreators = {
+        addTodo: sinon.stub().returns({ type: 'ADD_TODO' }),
+      };
+      const mergeProps = (stateProps, dispatchProps, ownProps) =>
+        Object.assign({}, ownProps, {
+          todos: stateProps.todos[ownProps.userId],
+          addTodo: text => dispatchProps.addTodo(ownProps.userId, text),
+        });
+      const connectedComponent = connect(
+        mapStateToProps,
+        actionCreators,
+        mergeProps
+      )(ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy userId='bar'}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+
+      // Injects the correct `todos`
+      expect(instance).to.have.own.property('todos', todos.bar);
+
+      // The `addTodo` action is bound
+      expect(instance).itself.respondsTo('addTodo');
+
+      instance.get('addTodo')('Save the world!');
+      expect(actionCreators.addTodo).to.have.been.calledOnceWithExactly(
+        'bar',
+        'Save the world!'
+      );
+    });
+  });
 });
