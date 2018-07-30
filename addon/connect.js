@@ -13,6 +13,8 @@ const connect = (
   mergeProps = defaultMergeProps
   // options
 ) => EmberComponent => {
+  let computeStateProps = mapStateToProps;
+
   const update = componentInstance => {
     const {
       simpleReduxStore: { getState, dispatch },
@@ -28,9 +30,17 @@ const connect = (
       stateProps = {};
     } else if (typeof mapStateToProps === 'function') {
       if (mapStateToProps.length !== 1) {
-        stateProps = mapStateToProps(state, ownProps);
+        stateProps = computeStateProps(state, ownProps);
+        if (typeof stateProps === 'function') {
+          computeStateProps = stateProps;
+          stateProps = computeStateProps(state, ownProps);
+        }
       } else {
-        stateProps = mapStateToProps(state);
+        stateProps = computeStateProps(state);
+        if (typeof stateProps === 'function') {
+          computeStateProps = stateProps;
+          stateProps = computeStateProps(state);
+        }
       }
     } else {
       const componentName = componentInstance.get('_debugContainerKey');
