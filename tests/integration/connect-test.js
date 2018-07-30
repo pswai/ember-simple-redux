@@ -2,7 +2,7 @@ import Ember from 'ember';
 import { expect } from 'chai';
 import { describe, it } from 'mocha';
 import { setupRenderingTest } from 'ember-mocha';
-import { click, render } from '@ember/test-helpers';
+import { click, render, getContext } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
 import Component from '@ember/component';
 import { typeOf } from '@ember/utils';
@@ -28,6 +28,13 @@ async function expectThrow(cb, message) {
 
   Ember.onerror = oldOnerror;
   spy.restore();
+}
+
+function setupStore(reducer) {
+  const context = getContext();
+  const store = createStore(reducer);
+  context.owner.register('simple-redux:store', store);
+  return store;
 }
 
 describe('Integration | connect', function() {
@@ -62,8 +69,7 @@ describe('Integration | connect', function() {
     describe('as function', function() {
       it('calls `mapStateToProps` with Redux state and `ownProps` when arity 0', async function() {
         const state = {};
-        const store = createStore(() => state);
-        this.owner.register('simple-redux:store', store);
+        setupStore(() => state);
 
         // Arity: 0
         const mapStateToProps = () => {};
@@ -82,8 +88,7 @@ describe('Integration | connect', function() {
 
       it('calls `mapStateToProps` with Redux state only when arity 1', async function() {
         const state = {};
-        const store = createStore(() => state);
-        this.owner.register('simple-redux:store', store);
+        setupStore(() => state);
 
         // Arity: 1
         const mapStateToProps = state => state;
@@ -100,8 +105,7 @@ describe('Integration | connect', function() {
 
       it('calls `mapStateToProps` with Redux state and `ownProps` when arity 2', async function() {
         const state = {};
-        const store = createStore(() => state);
-        this.owner.register('simple-redux:store', store);
+        setupStore(() => state);
 
         // Arity: 2
         const mapStateToProps = (state, ownProps) => ({ state, ownProps });
@@ -119,10 +123,9 @@ describe('Integration | connect', function() {
       });
 
       it('sets `stateProps` to connected component', async function() {
-        const store = createStore(() => ({
+        setupStore(() => ({
           count: 5,
         }));
-        this.owner.register('simple-redux:store', store);
 
         const mapStateToProps = (state, ownProps) => ({
           count: state.count,
@@ -162,8 +165,7 @@ describe('Integration | connect', function() {
   describe('with `mapDispatchToProps`', function() {
     describe('as function', function() {
       it('calls `mapDispatchToProps` with `dispatch` and `ownProps` when arity 0', async function() {
-        const store = createStore(() => {});
-        this.owner.register('simple-redux:store', store);
+        const store = setupStore(() => {});
 
         // Arity: 0
         const mapDispatchToProps = () => {};
@@ -182,8 +184,7 @@ describe('Integration | connect', function() {
       });
 
       it('calls `mapDispatchToProps` with `dispatch` only when arity 1', async function() {
-        const store = createStore(() => {});
-        this.owner.register('simple-redux:store', store);
+        const store = setupStore(() => {});
 
         // Arity: 1
         const mapDispatchToProps = dispatch => ({
@@ -206,8 +207,7 @@ describe('Integration | connect', function() {
       });
 
       it('calls `mapDispatchToProps` with `dispatch` and `ownProps` when arity 2', async function() {
-        const store = createStore(() => {});
-        this.owner.register('simple-redux:store', store);
+        const store = setupStore(() => {});
 
         // Arity: 2
         const mapDispatchToProps = (dispatch, ownProps) => ({
@@ -232,8 +232,7 @@ describe('Integration | connect', function() {
 
     describe('as object', function() {
       it('wraps each property with `dispatch`', async function() {
-        const store = createStore(() => {});
-        this.owner.register('simple-redux:store', store);
+        const store = setupStore(() => {});
         const mapDispatchToProps = {
           foo: sinon.stub().returns({
             type: 'DO_SOMETHING',
@@ -262,8 +261,7 @@ describe('Integration | connect', function() {
 
     describe('misssing', function() {
       it('adds `dispatch` to props', async function() {
-        const store = createStore(() => {});
-        this.owner.register('simple-redux:store', store);
+        const store = setupStore(() => {});
 
         const connectedComponent = connect(
           null,
@@ -304,10 +302,9 @@ describe('Integration | connect', function() {
   describe('with `mergeProps`', function() {
     describe('missing', function() {
       it('gives `stateProps` precedence over `ownProps`', async function() {
-        const store = createStore(() => ({
+        setupStore(() => ({
           count: 5,
         }));
-        this.owner.register('simple-redux:store', store);
 
         const mapStateToProps = ({ count }) => ({ foo: count });
         const connectedComponent = connect(mapStateToProps)(ClickForInstance);
@@ -346,10 +343,9 @@ describe('Integration | connect', function() {
       });
 
       it('gives `dispatchProps` precedence over `stateProps`', async function() {
-        const store = createStore(() => ({
+        setupStore(() => ({
           count: 5,
         }));
-        this.owner.register('simple-redux:store', store);
         const mapStateToProps = ({ count }) => ({ foo: count });
         const mapDispatchToProps = { foo() {} };
         const connectedComponent = connect(
@@ -373,10 +369,9 @@ describe('Integration | connect', function() {
 
     describe('as function', function() {
       it('sets the result to connected component', async function() {
-        const store = createStore(() => ({
+        setupStore(() => ({
           count: 5,
         }));
-        this.owner.register('simple-redux:store', store);
 
         const mapStateToProps = ({ count }) => ({ foo: count });
         const mapDispatchToProps = { foo() {} };
@@ -440,8 +435,7 @@ describe('Integration | connect', function() {
           }
           return state;
         };
-        const store = createStore(reducer);
-        this.owner.register('simple-redux:store', store);
+        const store = setupStore(reducer);
 
         const mapStateToProps = state => state;
         const mergeProps = (stateProps, dispatchProps, ownProps) => ({
