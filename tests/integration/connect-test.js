@@ -505,11 +505,14 @@ describe('Integration | connect', function() {
 
       const spy = sinon.spy();
       this.set('spy', spy);
-      await render(hbs`{{base-target onClick=spy}}`);
-      await click('.test-target');
-
-      await render(hbs`{{test-target onClick=spy}}`);
-      await click('.test-target');
+      await render(hbs`
+        {{base-target onClick=spy}}
+        {{test-target onClick=spy}}
+      `);
+      await Promise.all([
+        click('.test-target:nth-child(1)'),
+        click('.test-target:nth-child(2)'),
+      ]);
 
       const baseInstanceProps = Object.getOwnPropertyNames(
         spy.getCall(0).args[0]
