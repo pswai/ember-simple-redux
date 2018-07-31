@@ -132,6 +132,14 @@ function connectAdvanced(
   };
 }
 
-export default createConnect({
-  connectHOC: connectAdvanced,
-});
+export function createConnectEmber(config, ...args) {
+  return createConnect(
+    {
+      ...config,
+      connectHOC: connectAdvanced,
+    },
+    ...args
+  );
+}
+
+export default createConnectEmber();

@@ -9,6 +9,14 @@ import isReduxStore from '../../utils/is-redux-store';
 describe('Integration | Initializer | simple-redux-store', function() {
   setupRenderingTest();
 
+  it('registers `simple-redux:store`', function() {
+    const registeredStuff = this.owner.resolveRegistration(
+      'simple-redux:store'
+    );
+    expect(isReduxStore(registeredStuff), 'simple-redux:store is Redux store')
+      .to.be.true;
+  });
+
   it('injects `simpleReduxStore` to components', async function() {
     const spy = sinon.spy();
     this.set('spy', spy);

@@ -1,6 +1,6 @@
 import Component from '@ember/component';
 import layout from '../templates/components/todo-list';
-import connect from 'ember-simple-redux/connect';
+import { connect } from 'ember-simple-redux';
 
 const TodoList = Component.extend({
   layout,
