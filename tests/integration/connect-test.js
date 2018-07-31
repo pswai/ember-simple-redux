@@ -74,7 +74,7 @@ describe('Integration | connect', function() {
         setupStore(() => state);
 
         // Arity: 0
-        const mapStateToProps = () => {};
+        const mapStateToProps = () => ({});
         const spy = sinon.spy(mapStateToProps);
         const connectedComponent = connect(spy)(Component);
         this.owner.register('component:test-target', connectedComponent);
@@ -170,7 +170,7 @@ describe('Integration | connect', function() {
         const store = setupStore(() => {});
 
         // Arity: 0
-        const mapDispatchToProps = () => {};
+        const mapDispatchToProps = () => ({});
         const spy = sinon.spy(mapDispatchToProps);
         const connectedComponent = connect(
           null,
@@ -762,51 +762,86 @@ describe('Integration | connect', function() {
     });
 
     // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#factory-functions
-    describe('supports `mapStateToProps` as factory function', function() {
-      it('uses the returned function as `mapStateToProps`', async function() {
-        let computeCount = 0;
-        let memoizedReturnCount = 0;
-        const store = setupStore(() => ({ value: 1 }));
+    it('supports `mapStateToProps` as factory function', async function() {
+      let computeCount = 0;
+      let memoizedReturnCount = 0;
+      const store = setupStore(() => ({ value: 1 }));
 
-        const mapStateFactory = () => {
-          let lastProp, lastVal, lastResult;
-          return (state, props) => {
-            if (props.name === lastProp && lastVal === state.value) {
-              memoizedReturnCount++;
-              return lastResult;
-            }
-            computeCount++;
-            lastProp = props.name;
-            lastVal = state.value;
-            return (lastResult = {
-              someObject: { prop: props.name, stateVal: state.value },
-            });
-          };
+      const mapStateFactory = () => {
+        let lastProp, lastVal, lastResult;
+        return (state, props) => {
+          if (props.name === lastProp && lastVal === state.value) {
+            memoizedReturnCount++;
+            return lastResult;
+          }
+          computeCount++;
+          lastProp = props.name;
+          lastVal = state.value;
+          return (lastResult = {
+            someObject: { prop: props.name, stateVal: state.value },
+          });
         };
+      };
 
-        const connectedComponent = connect(mapStateFactory)(Component);
-        this.owner.register('component:test-target', connectedComponent);
+      const connectedComponent = connect(mapStateFactory)(Component);
+      this.owner.register('component:test-target', connectedComponent);
 
-        await render(hbs`
+      await render(hbs`
           {{test-target name='foo'}}
           {{test-target name='bar'}}
         `);
 
-        store.dispatch({ type: 'RANDOM' });
-        expect(computeCount, 'Should only compute twice').to.equal(2);
-        expect(
-          memoizedReturnCount,
-          'Subsequent calls should be memoized'
-        ).to.equal(2);
-      });
-
-      it('verifies `stateProps` to be plain object');
+      store.dispatch({ type: 'RANDOM' });
+      expect(computeCount, 'Should only compute twice').to.equal(2);
+      expect(
+        memoizedReturnCount,
+        'Subsequent calls should be memoized'
+      ).to.equal(2);
     });
 
-    describe('supports `mapDispatchToProps` as factory function', function() {
-      it('uses the returned function as `mapDispatchToProps`');
+    it('supports `mapDispatchToProps` as factory function', async function() {
+      let computeCount = 0;
+      let memoizedReturnCount = 0;
+      const store = setupStore(() => ({ value: 1 }));
 
-      it('verifies `dispatchProps` to be plain object');
+      const mapDispatchFactory = () => {
+        let lastProp, lastResult;
+        return (dispatch, props) => {
+          if (props.name === lastProp) {
+            memoizedReturnCount++;
+            return lastResult;
+          }
+          computeCount++;
+          lastProp = props.name;
+          return (lastResult = { someObject: { dispatchFn: dispatch } });
+        };
+      };
+      const mergeParentDispatch = (stateProps, dispatchProps, parentProps) => {
+        return Object.assign({}, stateProps, dispatchProps, {
+          name: parentProps.name,
+        });
+      };
+
+      const connectedComponent = connect(
+        null,
+        mapDispatchFactory,
+        mergeParentDispatch
+      )(Component);
+      this.owner.register('component:test-target', connectedComponent);
+
+      this.set('count', 0);
+      await render(hbs`
+        {{test-target count=count name='foo'}}
+        {{test-target count=count name='bar'}}
+      `);
+      this.set('count', 1);
+
+      store.dispatch({ type: 'RANDOM' });
+      expect(computeCount, 'Should only compute twice').to.equal(2);
+      expect(
+        memoizedReturnCount,
+        'Subsequent calls should be memoized'
+      ).to.equal(2);
     });
   });
 });
