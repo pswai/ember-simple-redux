@@ -1,118 +1,127 @@
-import { bindActionCreators } from 'redux';
+import Ember from 'ember';
 import getMutableAttributes from './utils/get-mutable-attributes';
+import { createConnect } from 'react-redux/lib/connect/connect';
 
-const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
-  ...ownProps,
-  ...stateProps,
-  ...dispatchProps,
-});
-
-const connect = (
-  mapStateToProps,
-  mapDispatchToProps,
-  mergeProps = defaultMergeProps
-  // options
-) => EmberComponent => {
-  let computeStateProps = mapStateToProps;
-
-  const update = componentInstance => {
-    const {
-      simpleReduxStore: { getState, dispatch },
-      attrs,
-    } = componentInstance;
-    const state = getState();
-    let stateProps, dispatchProps, finalProps;
-    let ownProps = getMutableAttributes(attrs);
-
-    // Check arity, if arity is 1 then no `ownProps` is needed
-    // Follow the sequence in react-redux: Missing, Function
-    if (!mapStateToProps) {
-      stateProps = {};
-    } else if (typeof mapStateToProps === 'function') {
-      if (mapStateToProps.length !== 1) {
-        stateProps = computeStateProps(state, ownProps);
-        if (typeof stateProps === 'function') {
-          computeStateProps = stateProps;
-          stateProps = computeStateProps(state, ownProps);
-        }
-      } else {
-        stateProps = computeStateProps(state);
-        if (typeof stateProps === 'function') {
-          computeStateProps = stateProps;
-          stateProps = computeStateProps(state);
-        }
+function makeUpdater(sourceSelector, store) {
+  return function updater(props, prevState) {
+    try {
+      const nextProps = sourceSelector(store.getState(), props);
+      if (nextProps !== prevState.props || prevState.error) {
+        return {
+          shouldComponentUpdate: true,
+          props: nextProps,
+          error: null,
+        };
       }
-    } else {
-      const componentName = componentInstance.get('_debugContainerKey');
-      throw new Error(
-        `Invalid value of type ${typeof mapStateToProps} for mapStateToProps argument when connecting component ${componentName}.`
-      );
-    }
-
-    // Check arity, if arity is 1 then no `ownProps` is needed
-    // Follow the sequence in react-redux: Object, Missing, Function
-    if (mapDispatchToProps && typeof mapDispatchToProps === 'object') {
-      dispatchProps = bindActionCreators(mapDispatchToProps, dispatch);
-    } else if (!mapDispatchToProps) {
-      dispatchProps = {
-        dispatch: dispatch,
+      return {
+        shouldComponentUpdate: false,
       };
-    } else if (typeof mapDispatchToProps === 'function') {
-      if (mapDispatchToProps.length !== 1) {
-        dispatchProps = mapDispatchToProps(dispatch, ownProps);
-      } else {
-        dispatchProps = mapDispatchToProps(dispatch);
-      }
-    } else {
-      const componentName = componentInstance.get('_debugContainerKey');
-      throw new Error(
-        `Invalid value of type ${typeof mapDispatchToProps} for mapDispatchToProps argument when connecting component ${componentName}.`
+    } catch (error) {
+      return {
+        shouldComponentUpdate: true,
+        error,
+      };
+    }
+  };
+}
+
+function connectAdvanced(
+  selectorFactory,
+  {
+    getDisplayName = name => `ConnectAdvanced(${name})`,
+    methodName = 'connectAdvanced',
+    renderCountProp = undefined,
+    shouldHandleStateChanges = true,
+    storeKey = 'simpleReduxStore',
+    withRef = false,
+    ...connectOptions
+  } = {}
+) {
+  return function wrapWithConnect(WrappedComponent) {
+    function createUpdater(store, wrappedComponentName) {
+      const displayName = getDisplayName(wrappedComponentName);
+
+      const selectorFactoryOptions = {
+        ...connectOptions,
+        getDisplayName,
+        methodName,
+        renderCountProp,
+        shouldHandleStateChanges,
+        storeKey,
+        withRef,
+        displayName,
+        wrappedComponentName,
+        WrappedComponent,
+      };
+
+      const sourceSelector = selectorFactory(
+        store.dispatch,
+        selectorFactoryOptions
       );
+      return makeUpdater(sourceSelector, store);
     }
 
-    // Do mergeProps and set it to component instance
-    if (typeof mergeProps === 'function') {
-      finalProps = mergeProps(stateProps, dispatchProps, ownProps);
-      componentInstance.setProperties(finalProps);
-    } else {
-      const componentName = componentInstance.get('_debugContainerKey');
-      throw new Error(
-        `Invalid value of type ${typeof mergeProps} for mergeProps argument when connecting component ${componentName}.`
+    function runUpdater(componentInstance) {
+      const { attrs, _simpleRedux } = componentInstance;
+      const ownProps = getMutableAttributes(attrs);
+      const { props: nextProps } = Object.assign(
+        _simpleRedux,
+        _simpleRedux.updater(ownProps, _simpleRedux)
       );
+      componentInstance.setProperties(nextProps);
+
+      // This prevents attrs to be leaked to component
+      Object.keys(attrs).forEach(key => {
+        if (!nextProps.hasOwnProperty(key)) {
+          delete componentInstance[key];
+        }
+      });
     }
 
-    // This prevents attrs to be leaked to component
-    Object.keys(attrs).forEach(key => {
-      if (!finalProps.hasOwnProperty(key)) {
-        delete componentInstance[key];
-      }
+    return WrappedComponent.extend({
+      init() {
+        const wrappedComponentName =
+          this.get(Ember.NAME_KEY) ||
+          this.get('_debugContainerKey') ||
+          'Component';
+        const store = this[storeKey];
+        const updater = createUpdater(store, wrappedComponentName);
+        let unsubscribe;
+
+        Object.defineProperty(this, '_simpleRedux', {
+          configurable: true,
+          enumerable: false,
+          writable: true,
+          value: {
+            store,
+            updater,
+            unsubscribe,
+          },
+        });
+
+        if (shouldHandleStateChanges) {
+          store.subscribe(() => runUpdater(this));
+          runUpdater(this);
+        }
+
+        this._super(...arguments);
+      },
+
+      didReceiveAttrs() {
+        runUpdater(this);
+        this._super(...arguments);
+      },
+
+      willDestroy() {
+        if (this._simpleRedux.unsubscribe) {
+          this._simpleRedux.unsubscribe();
+        }
+        this._super(...arguments);
+      },
     });
   };
+}
 
-  return EmberComponent.extend({
-    init() {
-      const store = this.simpleReduxStore;
-
-      if (mapStateToProps) {
-        this.unsubscribe = store.subscribe(() => update(this));
-      }
-
-      update(this);
-      this._super(...arguments);
-    },
-
-    didUpdateAttrs() {
-      update(this);
-      this._super(...arguments);
-    },
-
-    willDestroy() {
-      if (this.unsubscribe) {
-        this.unsubscribe();
-      }
-      this._super(...arguments);
-    },
-  });
-};
-
-export default connect;
+export default createConnect({
+  connectHOC: connectAdvanced,
+});

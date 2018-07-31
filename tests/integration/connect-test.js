@@ -22,10 +22,11 @@ async function expectThrow(cb, message) {
 
   await cb();
 
-  const matcher = sinon.match.instanceOf(Error).and(sinon.match({ message }));
+  const matcher = sinon.match.instanceOf(Error);
   expect(spy, `Expected ${cb} to throw an error`).to.have.been.calledOnceWith(
     matcher
   );
+  expect(spy.getCall(0).args[0]).to.have.property('message', message);
 
   Ember.onerror = oldOnerror;
   spy.restore();
@@ -526,7 +527,7 @@ describe('Integration | connect', function() {
       expect(connectedInstance).itself.respondsTo('dispatch');
       expect(connectedInstanceProps)
         .to.include.members(baseInstanceProps)
-        .and.have.lengthOf(baseInstanceProps.length + 1);
+        .and.have.lengthOf(baseInstanceProps.length + 2);
 
       // Don't listen to store
       expect(subscribeSpy).to.have.not.been.called;
@@ -758,6 +759,54 @@ describe('Integration | connect', function() {
         'bar',
         'Save the world!'
       );
+    });
+
+    // https://github.com/reduxjs/react-redux/blob/master/docs/api.md#factory-functions
+    describe('supports `mapStateToProps` as factory function', function() {
+      it('uses the returned function as `mapStateToProps`', async function() {
+        let computeCount = 0;
+        let memoizedReturnCount = 0;
+        const store = setupStore(() => ({ value: 1 }));
+
+        const mapStateFactory = () => {
+          let lastProp, lastVal, lastResult;
+          return (state, props) => {
+            if (props.name === lastProp && lastVal === state.value) {
+              memoizedReturnCount++;
+              return lastResult;
+            }
+            computeCount++;
+            lastProp = props.name;
+            lastVal = state.value;
+            return (lastResult = {
+              someObject: { prop: props.name, stateVal: state.value },
+            });
+          };
+        };
+
+        const connectedComponent = connect(mapStateFactory)(Component);
+        this.owner.register('component:test-target', connectedComponent);
+
+        await render(hbs`
+          {{test-target name='foo'}}
+          {{test-target name='bar'}}
+        `);
+
+        store.dispatch({ type: 'RANDOM' });
+        expect(computeCount, 'Should only compute twice').to.equal(2);
+        expect(
+          memoizedReturnCount,
+          'Subsequent calls should be memoized'
+        ).to.equal(2);
+      });
+
+      it('verifies `stateProps` to be plain object');
+    });
+
+    describe('supports `mapDispatchToProps` as factory function', function() {
+      it('uses the returned function as `mapDispatchToProps`');
+
+      it('verifies `dispatchProps` to be plain object');
     });
   });
 });
