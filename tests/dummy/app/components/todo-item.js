@@ -8,7 +8,7 @@ export default Component.extend({
 
   actions: {
     toggleComplete() {
-      this.simpleReduxStore.dispatch({
+      this.store.dispatch({
         type: 'TODO_TOGGLE_COMPLETE',
         payload: {
           todoId: this.get('todo.id'),

@@ -17,7 +17,7 @@ describe('Integration | Initializer | simple-redux-store', function() {
       .to.be.true;
   });
 
-  it('injects `simpleReduxStore` to components', async function() {
+  it('injects `store` to components', async function() {
     const spy = sinon.spy();
     this.set('spy', spy);
 
@@ -26,7 +26,7 @@ describe('Integration | Initializer | simple-redux-store', function() {
 
     expect(spy.calledOnce, 'Spy called exactly once').to.be.true;
     expect(
-      isReduxStore(spy.getCall(0).args[0].simpleReduxStore),
+      isReduxStore(spy.getCall(0).args[0].store),
       'Spy called with Redux store'
     ).to.be.true;
   });

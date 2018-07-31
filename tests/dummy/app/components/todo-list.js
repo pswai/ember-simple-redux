@@ -11,7 +11,7 @@ const TodoList = Component.extend({
 
   actions: {
     addNewTodo() {
-      this.simpleReduxStore.dispatch({
+      this.store.dispatch({
         type: 'TODO_ADD',
         payload: {
           title: this.get('newTodoTitle'),
