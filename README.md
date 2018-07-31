@@ -1,6 +1,6 @@
 # ember-simple-redux
 
-[Short description of the addon.]
+`react-redux`-compatible way to use Redux in Ember applications.
 
 ## Installation
 
@@ -10,7 +10,32 @@ ember install ember-simple-redux
 
 ## Usage
 
-[Longer description of how to use the addon in apps.]
+`ember-simple-redux` provides a `connect()` function with identical interface
+with the one provided by `react-redux`.
+
+Whatever you have learned for `react-redux` can be applied here. This is
+especially useful if you are migrating Ember to React since your `connect()`
+codes is now framework-agnostic!
+
+Find `react-redux` [documentation here](https://github.com/reduxjs/react-redux)!
+
+### Basic Usage
+
+```javascript
+import { connect } from 'ember-simple-redux';
+import TodoList from 'my-app/components/todo-list';
+
+const mapStateToProps = state => ({
+  todos: state.todos,
+});
+
+export default connect(mapStateToProps)(TodoList);
+```
+
+## Prior Arts
+
+- [ember-redux](https://github.com/ember-redux/ember-redux)
+- [ember-cli-redux](https://github.com/AltSchool/ember-cli-redux)
 
 ## Contributing
 

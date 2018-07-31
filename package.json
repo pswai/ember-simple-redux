@@ -1,11 +1,14 @@
 {
   "name": "ember-simple-redux",
-  "version": "0.0.0",
-  "description": "The default blueprint for ember-cli addons.",
+  "version": "0.1.0",
+  "description": "React-redux-compatible way to use Redux in Ember applications.",
   "keywords": [
-    "ember-addon"
+    "ember-addon",
+    "redux",
+    "react",
+    "react-redux"
   ],
-  "repository": "",
+  "repository": "https://github.com/pswai/ember-simple-redux",
   "license": "MIT",
   "author": "",
   "directories": {
