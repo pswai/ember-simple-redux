@@ -64,18 +64,21 @@ function connectAdvanced(
     function runUpdater(componentInstance) {
       const { attrs, _simpleRedux } = componentInstance;
       const ownProps = getMutableAttributes(attrs);
-      const { props: nextProps } = Object.assign(
+      const { props: nextProps, shouldComponentUpdate } = Object.assign(
         _simpleRedux,
         _simpleRedux.updater(ownProps, _simpleRedux)
       );
-      componentInstance.setProperties(nextProps);
 
-      // This prevents attrs to be leaked to component
-      Object.keys(attrs).forEach(key => {
-        if (!nextProps.hasOwnProperty(key)) {
-          delete componentInstance[key];
-        }
-      });
+      if (shouldComponentUpdate) {
+        componentInstance.setProperties(nextProps);
+
+        // This prevents attrs to be leaked to component
+        Object.keys(attrs).forEach(key => {
+          if (!nextProps.hasOwnProperty(key)) {
+            delete componentInstance[key];
+          }
+        });
+      }
     }
 
     return WrappedComponent.extend({
@@ -96,6 +99,7 @@ function connectAdvanced(
             store,
             updater,
             unsubscribe,
+            renderCount: 0,
           },
         });
 
@@ -110,6 +114,12 @@ function connectAdvanced(
       didReceiveAttrs() {
         runUpdater(this);
         this._super(...arguments);
+      },
+
+      didRender() {
+        if (renderCountProp) {
+          this.set(renderCountProp, this._simpleRedux.renderCount++);
+        }
       },
 
       willDestroy() {
