@@ -1,9 +1,4 @@
-import connect, { createConnectEmber } from './connect';
+import connect from './connect';
 import provider, { createProvider } from './provider';
 
-export {
-  connect,
-  createConnectEmber as createConnect,
-  provider,
-  createProvider,
-};
+export { connect, provider, createProvider };
