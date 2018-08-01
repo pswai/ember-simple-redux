@@ -1,4 +1,5 @@
 import connect from './connect';
+import connectAdvanced from './connectAdvanced';
 import provider, { createProvider } from './provider';
 
-export { connect, provider, createProvider };
+export { connect, connectAdvanced, provider, createProvider };
