@@ -37,6 +37,9 @@ function connectAdvanced(
   } = {}
 ) {
   return function wrapWithConnect(WrappedComponent) {
+    // Declare this here so that we can access statics like `defaultProps` here
+    let ConnectedComponent;
+
     function createUpdater(store, wrappedComponentName) {
       const displayName = getDisplayName(wrappedComponentName);
 
@@ -62,7 +65,10 @@ function connectAdvanced(
 
     function runUpdater(componentInstance) {
       const { attrs, _simpleRedux } = componentInstance;
-      const ownProps = getMutableAttributes(attrs);
+      const ownProps = {
+        ...ConnectedComponent.defaultProps,
+        ...getMutableAttributes(attrs),
+      };
       const { props: nextProps, shouldComponentUpdate } = Object.assign(
         _simpleRedux,
         _simpleRedux.updater(ownProps, _simpleRedux)
@@ -80,7 +86,7 @@ function connectAdvanced(
       }
     }
 
-    return WrappedComponent.extend({
+    ConnectedComponent = WrappedComponent.extend({
       init() {
         const wrappedComponentName =
           this.get(Ember.NAME_KEY) ||
@@ -130,6 +136,8 @@ function connectAdvanced(
         this._super(...arguments);
       },
     });
+
+    return ConnectedComponent;
   };
 }
 

@@ -9,6 +9,7 @@ import { typeOf } from '@ember/utils';
 import { createStore, bindActionCreators } from 'redux';
 import connect from 'ember-simple-redux/connect';
 import ClickForInstance from 'dummy/components/tests/click-for-instance';
+import WithDefaultValue from 'dummy/components/tests/with-default-value';
 import sinon from 'sinon';
 
 // This function is used to assert throws
@@ -421,10 +422,8 @@ describe('Integration | connect', function() {
 
         const instance = spy.getCall(0).args[0];
         expect(instance).respondsTo('onClick');
-        expect(instance).to.not.have.own.property('foo');
-        expect(instance).to.not.have.own.property('bar');
-        expect(instance.get('foo')).to.be.undefined;
-        expect(instance.get('bar')).to.be.undefined;
+        expect(instance).to.not.have.property('foo');
+        expect(instance).to.not.have.property('bar');
       });
 
       it('prevents leaking props even after updates', async function() {
@@ -465,8 +464,32 @@ describe('Integration | connect', function() {
           type: 'CHANGE_TO_BAR',
         });
         expect(instance).respondsTo('onClick');
-        expect(instance).to.not.have.own.property('foo');
-        expect(instance).to.have.own.property('bar');
+        expect(instance)
+          .to.have.own.property('bar')
+          .but.not.own.property('foo');
+      });
+
+      it('prevents leaking props and default values should still work', async function() {
+        const mergeProps = (stateProps, dispatchProps, ownProps) => ({
+          onClick: ownProps.onClick,
+        });
+        const connectedComponent = connect(
+          null,
+          null,
+          mergeProps
+        )(WithDefaultValue); // There is a default `foo` defined with value 123
+        this.owner.register('component:test-target', connectedComponent);
+
+        const spy = sinon.spy();
+        this.set('spy', spy);
+        await render(hbs`{{test-target onClick=spy foo=1 bar='test'}}`);
+        await click('.test-target');
+
+        const instance = spy.getCall(0).args[0];
+        expect(instance).respondsTo('onClick');
+        expect(instance)
+          .to.not.have.own.property('foo')
+          .but.have.property('foo', 123);
       });
     });
 
@@ -484,6 +507,109 @@ describe('Integration | connect', function() {
           () => render(hbs`{{test-target}}`),
           'Invalid value of type number for mergeProps argument when connecting component component:test-target.'
         );
+      });
+    });
+  });
+
+  describe('with `defaultProps` static', function() {
+    it('passes values from `defaultProps` if it is undefined', async function() {
+      const connectedComponent = connect()(ClickForInstance);
+      connectedComponent.defaultProps = {
+        foo: 456,
+      };
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+      expect(instance).to.have.own.property('foo', 456);
+    });
+
+    it('uses props passed from outside if exists', async function() {
+      const connectedComponent = connect()(ClickForInstance);
+      connectedComponent.defaultProps = {
+        foo: 456,
+      };
+      this.owner.register('component:test-target', connectedComponent);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy foo=1}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+      expect(instance).to.have.own.property('foo', 1);
+    });
+
+    it('includes `defaultProps` in `ownProps` of `mapStateToProps`', async function() {
+      setupStore(() => ({}));
+
+      // Arity: 0
+      const mapStateToProps = () => ({});
+      const spy = sinon.spy(mapStateToProps);
+      const connectedComponent = connect(spy)(Component);
+      connectedComponent.defaultProps = {
+        bar: 456,
+      };
+      this.owner.register('component:test-target', connectedComponent);
+
+      await render(hbs`{{test-target foo=1}}`);
+
+      const ownProps = spy.getCall(0).args[1];
+      expect(ownProps).to.deep.equal({
+        foo: 1,
+        bar: 456,
+      });
+    });
+
+    it('includes `defaultProps` in `ownProps` of `mapDispatchToProps`', async function() {
+      setupStore(() => ({}));
+
+      // Arity: 0
+      const mapDispatchToProps = () => ({});
+      const spy = sinon.spy(mapDispatchToProps);
+      const connectedComponent = connect(
+        null,
+        spy
+      )(Component);
+      connectedComponent.defaultProps = {
+        bar: 456,
+      };
+      this.owner.register('component:test-target', connectedComponent);
+
+      await render(hbs`{{test-target foo=1}}`);
+
+      const ownProps = spy.getCall(0).args[1];
+      expect(ownProps).to.deep.equal({
+        foo: 1,
+        bar: 456,
+      });
+    });
+
+    it('includes `defaultProps` in `ownProps` of `mergeProps`', async function() {
+      setupStore(() => ({}));
+
+      const mergeProps = () => ({});
+      const spy = sinon.spy(mergeProps);
+      const connectedComponent = connect(
+        null,
+        null,
+        spy
+      )(Component);
+      connectedComponent.defaultProps = {
+        bar: 456,
+      };
+      this.owner.register('component:test-target', connectedComponent);
+
+      await render(hbs`{{test-target foo=1}}`);
+
+      const ownProps = spy.getCall(0).args[2];
+      expect(ownProps).to.deep.equal({
+        foo: 1,
+        bar: 456,
       });
     });
   });

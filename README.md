@@ -34,6 +34,46 @@ const mapStateToProps = state => ({
 export default connect(mapStateToProps)(TodoList);
 ```
 
+### Default Props
+
+In React, defining default props is as straightforward as adding `defaultProps`
+to the React component. In Ember, default props are defined directly to the
+components. This remains working after `connect()`.
+
+```javascript
+// React
+const SayHi = props => `Hi, ${props.name}!`;
+
+SayHi.defaultProps = {
+  name: 'Guest',
+};
+
+// Ember
+const SayHi = Ember.Component.extend({
+  name: 'Guest',
+});
+```
+
+However, remember that `connect()` creates a higher-order component, so this
+does not apply to the connected component. To supply default props, we support
+defining `defaultProps` directly on the connected component.
+
+```javascript
+const mapStateToProps = (state, ownProps) => ({
+  name: state.users[ownProps.id].name,
+});
+
+const Connected = connect()(SayHi);
+
+Connected.defaultProps = {
+  id: 2,
+};
+
+export default Connected;
+```
+
+For more info, check out [this issue](https://github.com/reduxjs/react-redux/issues/633#issuecomment-299768271).
+
 ## API
 
 Since the goal of `ember-simple-redux` is to provide an interface as close as
