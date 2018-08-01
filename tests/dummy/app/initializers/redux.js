@@ -3,7 +3,7 @@ import configureStore from '../state/configure-store';
 
 export function initialize(application) {
   const store = configureStore();
-  provider(application, store);
+  provider(store, application);
 }
 
 export default {
