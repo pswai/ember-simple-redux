@@ -1,2 +1,6 @@
-<input type='checkbox' checked={{todo.isCompleted}} {{action 'toggleComplete'}}>
+<input
+  type='checkbox'
+  checked={{todo.isCompleted}}
+  {{action onToggle todo.id}}
+>
 {{todo.title}}

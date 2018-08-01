@@ -1,6 +1,7 @@
 import Component from '@ember/component';
-import layout from '../templates/components/todo-list';
 import { connect } from 'ember-simple-redux';
+import layout from '../templates/components/todo-list';
+import * as actionCreators from '../state/actionCreators';
 
 const TodoList = Component.extend({
   layout,
@@ -11,18 +12,14 @@ const TodoList = Component.extend({
 
   actions: {
     addNewTodo() {
-      this.store.dispatch({
-        type: 'TODO_ADD',
-        payload: {
-          title: this.get('newTodoTitle'),
-          listId: this.get('id'),
-        },
-      });
+      this.get('addTodo')(this.get('id'), this.get('newTodoTitle'));
       this.set('newTodoTitle', '');
     },
   },
 });
 
+// Depending on your need, you can separate this to another file
+// https://redux.js.org/faq/codestructure
 const mapStateToProps = (state, ownProps) => {
   const { id, showCompleted } = ownProps;
   return {
@@ -33,4 +30,9 @@ const mapStateToProps = (state, ownProps) => {
   };
 };
 
-export default connect(mapStateToProps)(TodoList);
+const mapDispatchToProps = actionCreators;
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(TodoList);

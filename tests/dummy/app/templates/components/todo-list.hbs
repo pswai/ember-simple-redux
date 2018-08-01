@@ -6,7 +6,7 @@
 {{#if todos.length}}
   <ul class='todo-list__listing'>
     {{#each todos as |todo|}}
-      {{todo-item todo=todo}}
+      {{todo-item todo=todo onToggle=toggleTodoComplete}}
     {{/each}}
   </ul>
 {{else}}
