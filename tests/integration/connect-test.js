@@ -35,7 +35,7 @@ async function expectThrow(cb, message) {
 function setupStore(reducer) {
   const context = getContext();
   const store = createStore(reducer);
-  context.owner.register('simple-redux:store', store);
+  context.owner.register('simple-redux:simpleReduxStore', store);
   return store;
 }
 

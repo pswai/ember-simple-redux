@@ -32,7 +32,7 @@ function connectAdvanced(
     methodName = 'connectAdvanced',
     renderCountProp = undefined,
     shouldHandleStateChanges = true,
-    storeKey = 'store',
+    storeKey = 'simpleReduxStore',
     withRef = false,
     ...connectOptions
   } = {}

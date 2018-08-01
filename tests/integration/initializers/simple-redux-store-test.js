@@ -9,12 +9,14 @@ import isReduxStore from '../../utils/is-redux-store';
 describe('Integration | Initializer | simple-redux-store', function() {
   setupRenderingTest();
 
-  it('registers `simple-redux:store`', function() {
+  it('registers `simple-redux:simpleReduxStore`', function() {
     const registeredStuff = this.owner.resolveRegistration(
-      'simple-redux:store'
+      'simple-redux:simpleReduxStore'
     );
-    expect(isReduxStore(registeredStuff), 'simple-redux:store is Redux store')
-      .to.be.true;
+    expect(
+      isReduxStore(registeredStuff),
+      'simple-redux:simpleReduxStore is Redux store'
+    ).to.be.true;
   });
 
   it('injects `store` to components', async function() {
@@ -26,7 +28,7 @@ describe('Integration | Initializer | simple-redux-store', function() {
 
     expect(spy.calledOnce, 'Spy called exactly once').to.be.true;
     expect(
-      isReduxStore(spy.getCall(0).args[0].store),
+      isReduxStore(spy.getCall(0).args[0].simpleReduxStore),
       'Spy called with Redux store'
     ).to.be.true;
   });
