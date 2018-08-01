@@ -115,7 +115,9 @@ function connectAdvanced(
         this._super(...arguments);
       },
 
-      didRender() {
+      willRender() {
+        // We don't need to worry about removing this property because
+        // `renderCountProp` can't be changed after the component is connected.
         if (renderCountProp) {
           this.set(renderCountProp, this._simpleRedux.renderCount++);
         }

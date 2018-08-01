@@ -488,6 +488,35 @@ describe('Integration | connect', function() {
     });
   });
 
+  describe('with `option.renderCountProp`', function() {
+    it('tracks render count when provided', async function() {
+      const renderCountProp = 'howManyTimes';
+      const connectedComponent = connect(
+        null,
+        null,
+        null,
+        {
+          renderCountProp,
+        }
+      )(ClickForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      // Something to trigger update
+      this.set('foo', 100);
+
+      const spy = sinon.spy();
+      this.set('spy', spy);
+      await render(hbs`{{test-target onClick=spy foo=foo}}`);
+      await click('.test-target');
+
+      const instance = spy.getCall(0).args[0];
+      expect(instance).to.have.own.property(renderCountProp, 0);
+
+      this.set('foo', 101);
+      expect(instance).to.have.own.property(renderCountProp, 1);
+    });
+  });
+
   /*******************************************************************************************/
   /*                                                                                         */
   /* Cases Listed in https://github.com/reduxjs/react-redux/blob/master/docs/api.md#examples */
