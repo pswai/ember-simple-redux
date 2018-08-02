@@ -10,7 +10,7 @@
   ],
   "repository": "https://github.com/pswai/ember-simple-redux",
   "license": "MIT",
-  "author": "",
+  "author": "PSWai <parksoon_my@hotmail.com>",
   "directories": {
     "doc": "doc",
     "test": "tests"
