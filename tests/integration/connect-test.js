@@ -9,6 +9,8 @@ import { typeOf } from '@ember/utils';
 import { createStore, bindActionCreators } from 'redux';
 import connect from 'ember-simple-redux/connect';
 import ClickForInstance from 'dummy/components/tests/click-for-instance';
+import DidUpdateAttrsForInstance from 'dummy/components/tests/did-update-attrs-for-instance';
+import InitForInstance from 'dummy/components/tests/init-for-instance';
 import WithDefaultValue from 'dummy/components/tests/with-default-value';
 import sinon from 'sinon';
 
@@ -640,6 +642,102 @@ describe('Integration | connect', function() {
 
       this.set('foo', 101);
       expect(instance).to.have.own.property(renderCountProp, 1);
+    });
+  });
+
+  describe('with lifecycle hooks', function() {
+    it('ensures data available in `init` hook', async function() {
+      setupStore(() => ({
+        count: 5,
+      }));
+
+      const mapStateToProps = ({ count }) => ({ count });
+      const connectedComponent = connect(mapStateToProps)(InitForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const assertion = instance => {
+        expect(instance).to.have.own.property('foo', 1);
+        expect(instance).to.have.own.property('bar', 'test');
+        expect(instance).to.have.own.property('count', 5);
+      };
+      const spy = sinon.stub().callsFake(assertion);
+      this.set('spy', spy);
+      await render(hbs`{{test-target onInit=spy foo=1 bar='test'}}`);
+
+      expect(spy).to.have.been.calledOnce;
+    });
+
+    it('ensures actions available in `init` hook', async function() {
+      const mapDispatchToProps = { fetchSomethig() {} };
+      const connectedComponent = connect(
+        null,
+        mapDispatchToProps
+      )(InitForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const assertion = instance => {
+        expect(instance).to.have.own.property('foo', 1);
+        expect(instance).to.have.own.property('bar', 'test');
+        expect(instance).itself.respondsTo('fetchSomethig');
+      };
+      const spy = sinon.stub().callsFake(assertion);
+      this.set('spy', spy);
+      await render(hbs`{{test-target onInit=spy foo=1 bar='test'}}`);
+
+      expect(spy).to.have.been.calledOnce;
+    });
+
+    it('ensures data available in `didUpdateAttrs` hook', async function() {
+      setupStore(() => ({
+        count: 5,
+      }));
+
+      const mapStateToProps = ({ count }) => ({ count });
+      const connectedComponent = connect(mapStateToProps)(
+        DidUpdateAttrsForInstance
+      );
+      this.owner.register('component:test-target', connectedComponent);
+
+      const assertion = instance => {
+        expect(instance).to.have.own.property('foo', 2);
+        expect(instance).to.have.own.property('bar', 'test');
+        expect(instance).to.have.own.property('count', 5);
+      };
+      const spy = sinon.stub().callsFake(assertion);
+      this.set('spy', spy);
+      this.set('foo', 1);
+      await render(
+        hbs`{{test-target onDidUpdateAttrs=spy foo=foo bar='test'}}`
+      );
+
+      // This triggers and update
+      this.set('foo', 2);
+      expect(spy).to.have.been.calledOnce;
+    });
+
+    it('ensures actions available in `didUpdateAttrs` hook', async function() {
+      const mapDispatchToProps = { fetchSomethig() {} };
+      const connectedComponent = connect(
+        null,
+        mapDispatchToProps
+      )(DidUpdateAttrsForInstance);
+      this.owner.register('component:test-target', connectedComponent);
+
+      const assertion = instance => {
+        expect(instance).to.have.own.property('foo', 2);
+        expect(instance).to.have.own.property('bar', 'test');
+        expect(instance).itself.respondsTo('fetchSomethig');
+      };
+      const spy = sinon.stub().callsFake(assertion);
+      this.set('spy', spy);
+      this.set('foo', 1);
+      await render(
+        hbs`{{test-target onDidUpdateAttrs=spy foo=foo bar='test'}}`
+      );
+
+      // This triggers and update
+      this.set('foo', 2);
+      expect(spy).to.have.been.calledOnce;
     });
   });
 

@@ -110,13 +110,16 @@ function connectAdvanced(
 
         if (shouldHandleStateChanges) {
           store.subscribe(() => runUpdater(this));
-          runUpdater(this);
         }
 
+        // Different with React, side effects are allowed even in `init`.
+        // So updater is run as early as possible.
+        // In `react-redux`, this is run in `getDerivedStateFromProps`.
+        runUpdater(this);
         this._super(...arguments);
       },
 
-      didReceiveAttrs() {
+      didUpdateAttrs() {
         runUpdater(this);
         this._super(...arguments);
       },
