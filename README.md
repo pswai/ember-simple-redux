@@ -1,7 +1,8 @@
 # ember-simple-redux
 
 [![Build Status](https://travis-ci.org/pswai/ember-simple-redux.svg?branch=master)](https://travis-ci.org/pswai/ember-simple-redux)
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+[![npm](https://img.shields.io/npm/v/ember-simple-redux.svg)](https://www.npmjs.com/package/ember-simple-redux)
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat)](https://github.com/prettier/prettier)
 
 `react-redux`-compatible way to use Redux in Ember applications.
 
