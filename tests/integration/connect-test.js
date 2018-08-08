@@ -741,6 +741,45 @@ describe('Integration | connect', function() {
     });
   });
 
+  describe('with errors', function() {
+    it('throws the error from `mapStateToProps`', async function() {
+      const mapStateToProps = () => {
+        throw new Error('On purpose!');
+      };
+      const connectedComponent = connect(mapStateToProps)(Component);
+      this.owner.register('component:test-target', connectedComponent);
+
+      await expectThrow(() => render(hbs`{{test-target}}`), 'On purpose!');
+    });
+
+    it('throws the error from `mapDispatchToProps`', async function() {
+      const mapDispatchToProps = () => {
+        throw new Error('On purpose!');
+      };
+      const connectedComponent = connect(
+        null,
+        mapDispatchToProps
+      )(Component);
+      this.owner.register('component:test-target', connectedComponent);
+
+      await expectThrow(() => render(hbs`{{test-target}}`), 'On purpose!');
+    });
+
+    it('throws the error from `mergeProps`', async function() {
+      const mergeProps = () => {
+        throw new Error('On purpose!');
+      };
+      const connectedComponent = connect(
+        null,
+        null,
+        mergeProps
+      )(Component);
+      this.owner.register('component:test-target', connectedComponent);
+
+      await expectThrow(() => render(hbs`{{test-target}}`), 'On purpose!');
+    });
+  });
+
   /*******************************************************************************************/
   /*                                                                                         */
   /* Cases Listed in https://github.com/reduxjs/react-redux/blob/master/docs/api.md#examples */

@@ -79,7 +79,7 @@ function connectAdvanced(
 
         // This prevents attrs to be leaked to component
         Object.keys(attrs).forEach(key => {
-          if (!nextProps.hasOwnProperty(key)) {
+          if (!nextProps || !nextProps.hasOwnProperty(key)) {
             delete componentInstance[key];
           }
         });
@@ -125,6 +125,10 @@ function connectAdvanced(
       },
 
       willRender() {
+        if (this._simpleRedux.error) {
+          throw this._simpleRedux.error;
+        }
+
         // We don't need to worry about removing this property because
         // `renderCountProp` can't be changed after the component is connected.
         if (renderCountProp) {
