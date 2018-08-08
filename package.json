@@ -1,6 +1,6 @@
 {
   "name": "ember-simple-redux",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "React-redux-compatible way to use Redux in Ember applications.",
   "keywords": [
     "ember-addon",

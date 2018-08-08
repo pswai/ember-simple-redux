@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.1.2] - 2018-08-08
+
+### Fixed
+
+- Errors being swallowed by `connectAdvanced`.
+
 ## [0.1.1] - 2018-08-02
 
 ### Fixed
