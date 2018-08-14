@@ -780,6 +780,35 @@ describe('Integration | connect', function() {
     });
   });
 
+  describe('when component is destroyed', function() {
+    it('does not try to set properties', async function() {
+      const DEFAULT_STATE = { count: 5 };
+      const reducer = (state = DEFAULT_STATE, action) => {
+        if (action.type === 'INCREMENT') {
+          return {
+            count: state.count + 1,
+          };
+        }
+        return state;
+      };
+      const store = setupStore(reducer);
+
+      const mapStateToProps = ({ count }) => ({ count });
+      const connectedComponent = connect(mapStateToProps)(Component);
+      this.owner.register('component:test-target', connectedComponent);
+
+      await render(hbs`{{test-target}}`);
+
+      // Destroy the component then we dispatch to trigger update
+      await render(hbs``);
+      store.dispatch({ type: 'INCREMENT' });
+
+      // We can't really catch something to assert, but if we reach here we
+      // are good
+      expect('checkpoint').to.be.a.string;
+    });
+  });
+
   /*******************************************************************************************/
   /*                                                                                         */
   /* Cases Listed in https://github.com/reduxjs/react-redux/blob/master/docs/api.md#examples */
