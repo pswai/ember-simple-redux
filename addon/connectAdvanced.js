@@ -64,6 +64,14 @@ function connectAdvanced(
     }
 
     function runUpdater(componentInstance) {
+      // Skip if the componentInstance is no longer valid
+      if (
+        componentInstance.get('isDestroyed') ||
+        componentInstance.get('isDestroying')
+      ) {
+        return;
+      }
+
       const { attrs, _simpleRedux } = componentInstance;
       const ownProps = {
         ...ConnectedComponent.defaultProps,
