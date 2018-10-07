@@ -20,8 +20,12 @@
     "lint:js": "eslint .",
     "start": "ember serve",
     "test": "ember test",
-    "test:all": "ember try:each",
-    "precommit": "lint-staged"
+    "test:all": "ember try:each"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   },
   "lint-staged": {
     "*.{js,jsx}": [
