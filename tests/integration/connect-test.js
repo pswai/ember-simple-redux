@@ -778,6 +778,48 @@ describe('Integration | connect', function() {
 
       await expectThrow(() => render(hbs`{{test-target}}`), 'On purpose!');
     });
+
+    it('renders error information in DOM', async function() {
+      const mapStateToProps = () => {
+        throw new Error('On purpose!');
+      };
+      const connectedComponent = connect(mapStateToProps)(Component);
+      this.owner.register('component:test-target', connectedComponent);
+
+      await expectThrow(() => render(hbs`{{test-target}}`), 'On purpose!');
+      expect(Ember.$('#ember-simple-redux-error-display').length, 1);
+    });
+
+    it('removes error display when there is no more error', async function() {
+      const DEFAULT_STATE = { toThrow: true };
+      const reducer = (state = DEFAULT_STATE, action) => {
+        if (action.type === 'DONT_TRHOW') {
+          return {
+            toThrow: false,
+          };
+        }
+        return state;
+      };
+      const store = setupStore(reducer);
+
+      const mapStateToProps = state => {
+        if (state.toThrow) {
+          throw new Error('On purpose!');
+        }
+        return state;
+      };
+      const connectedComponent = connect(mapStateToProps)(Component);
+      this.owner.register('component:test-target', connectedComponent);
+
+      await expectThrow(() => render(hbs`{{test-target}}`), 'On purpose!');
+      expect(Ember.$('#ember-simple-redux-error-display').length, 1);
+
+      store.dispatch({
+        type: 'DONT_THROW',
+      });
+
+      expect(Ember.$('#ember-simple-redux-error-display').length, 0);
+    });
   });
 
   describe('when component is destroyed', function() {
