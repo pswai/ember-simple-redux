@@ -24,6 +24,54 @@ function makeUpdater(sourceSelector, store) {
   };
 }
 
+function renderError(error) {
+  const $ = Ember.$;
+
+  // Elements
+  const $comment = $('<!-- Error Display (ember-simple-redux) -->');
+  const $overlay = $('<div id="ember-simple-redux-error-display">');
+  const $message = $('<h2>').text(`${error.name}: ${error.message}`);
+  const $hr = $('<hr>');
+  const $stackTraceHeader = $('<h3>').text('Stacktrace');
+  const $stackTrace = $('<pre>').text(error.stack);
+  const $moreInfo = $('<p>').text('Full stacktrace can be found in console.');
+
+  // Structure
+  $overlay.append($message, $hr, $stackTraceHeader, $stackTrace, $moreInfo);
+
+  // Styles
+  $overlay.css({
+    zIndex: '999999',
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    padding: '20px',
+    backgroundColor: '#ffb3b3',
+    fontFamily: `'Helvetica', 'Arial', sans-serif`,
+    color: '#b70000',
+  });
+  $hr.css({
+    border: '1px solid #999',
+  });
+  $stackTrace.css({
+    padding: '15px',
+    border: '1px dashed red',
+    backgroundColor: '#fff',
+  });
+
+  // Render
+  $comment.appendTo('body');
+  $overlay.appendTo('body');
+
+  // Setup listener to remove this layer
+  $(document).one('remove-error-display.ember-simple-redux', function() {
+    $comment.remove();
+    $overlay.remove();
+  });
+}
+
 function connectAdvanced(
   selectorFactory,
   {
@@ -133,8 +181,12 @@ function connectAdvanced(
       },
 
       willRender() {
-        if (this._simpleRedux.error) {
-          throw this._simpleRedux.error;
+        const error = this._simpleRedux.error;
+        if (error) {
+          renderError(error);
+          throw error;
+        } else {
+          Ember.$(document).trigger('remove-error-display');
         }
 
         // We don't need to worry about removing this property because
