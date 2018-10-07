@@ -20,8 +20,12 @@
     "lint:js": "eslint .",
     "start": "ember serve",
     "test": "ember test",
-    "test:all": "ember try:each",
-    "precommit": "lint-staged"
+    "test:all": "ember try:each"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   },
   "lint-staged": {
     "*.{js,jsx}": [
@@ -70,7 +74,7 @@
     "eslint-plugin-ember": "^5.0.0",
     "eslint-plugin-node": "^7.0.1",
     "eslint-plugin-prettier": "2.6.0",
-    "husky": "^0.14.3",
+    "husky": "^1.1.1",
     "lint-staged": "^7.2.0",
     "loader.js": "^4.2.3",
     "prettier": "^1.13.7",
