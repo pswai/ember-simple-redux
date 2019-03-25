@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-- Support Ember >= 3.6.0 (#47)
+### Added
+
+- Support Ember >= 3.6.0. (#47)
+- Upgrade majority of dependencies (Babel 7, Ember CLI, etc).
+- Drop `ember-cli-mocha` in favor of `ember-mocha`.
+
+### Changed
+
+- Stop using `Ember.NAME_KEY` for connected component name as it is deprecated.
 
 ## [0.3.0] - 2018-10-07
 
