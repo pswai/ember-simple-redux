@@ -145,9 +145,7 @@ function connectAdvanced(
     ConnectedComponent = WrappedComponent.extend({
       init() {
         const wrappedComponentName =
-          this.get(Ember.NAME_KEY) ||
-          this.get('_debugContainerKey') ||
-          'Component';
+          this.get('_debugContainerKey') || 'Component';
         const store = this[storeKey];
         const updater = createUpdater(store, wrappedComponentName);
         let unsubscribe;
