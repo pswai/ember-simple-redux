@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.4.0] - 2019-03-25
+
 ### Added
 
 - Support Ember >= 3.6.0. (#47)
@@ -52,7 +54,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - `connect()`, `connectAdvanced()`, `provider`, `createProvider` APIs.
 
-[unreleased]: https://github.com/pswai/ember-simple-redux/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/pswai/ember-simple-redux/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/pswai/ember-simple-redux/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/pswai/ember-simple-redux/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/pswai/ember-simple-redux/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/pswai/ember-simple-redux/compare/v0.1.1...v0.1.2
