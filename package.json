@@ -39,7 +39,7 @@
     ]
   },
   "dependencies": {
-    "ember-auto-import": "^1.2.21",
+    "ember-auto-import": "^1.5.1",
     "ember-cli-babel": "^7.1.2",
     "react": "^16.4.1",
     "react-redux": "^5.0.7",
