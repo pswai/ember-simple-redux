@@ -44,7 +44,7 @@
     "react": "^16.4.1",
     "react-redux": "^5.0.7",
     "redux": "^4.0.0",
-    "semver": "^6.0.0"
+    "semver": "^7.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
